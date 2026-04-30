@@ -66,13 +66,16 @@ cd .. && rm -rf _tmp
 /aigc降低 <粘贴 ≥300 字的论文段落>
 ```
 
-Claude 会自动：
+Claude 会自动（全程无需用户再操作）：
 
-1. 切块（LaTeX 按 `\section` 切；Markdown 按标题切；纯文本按双换行切）
-2. 按 AI 痕迹严重度排序：**致谢节** > 软件架构描述 > 三段式结论 > 文献综述 > ...
-3. 对每块串行跑完 7 步流水线
-4. 输出 3 个文件：`*_aigc-reduced.<ext>`、`aigc-reduce-report.md`、`aigc-reduce-trace.md`
-5. ⚠️ **提醒进行 CNKI 验证**（本地测试仅参考，CNKI 是终审）
+1. **预扫描**（v4 新增）：自动调用 `detect_aigc.py --section-split`，用 NeurIPS 2023 模型给每个 section 打 AIGC 分，找不到脚本时静默降级到启发式顺序
+2. **按模型评分排序**：ai_prob 最高的 section 最先处理（如 `致谢 52% → 软件架构 38% → 相位特征 25%`）
+3. **对每块串行跑完 7 步流水线**：去结构化 → 词汇 → 节奏 → 衔接 → 克制 → 困惑度+思维痕迹 → 引用注入
+4. **后验证**：处理完成后自动运行后扫描，输出 before/after delta 表格
+5. 输出 4 个文件：`*_aigc-reduced.<ext>`、`aigc-reduce-report.md`、`aigc-reduce-trace.md`、`aigc-scan-results/results_*.json`
+6. ⚠️ **提醒进行 CNKI 验证**（本地测试仅参考，CNKI 是终审）
+
+> `/aigc-scan` 可单独调用做诊断，但 `/aigc降低` 已内置自动扫描，无需提前手动运行。
 
 ## 🔧 单步调用（高级用法）
 
@@ -88,14 +91,19 @@ Claude 会自动：
 /aigc-reduce-cite-inject  # 引用注入
 ```
 
-## 🧱 流水线总览（v3）
+## 🧱 流水线总览（v4）
 
 ```
-[输入完整稿件]
+/aigc降低 paper.tex          ← 用户只需这一条指令
        ↓
-   [Phase 0: 切块 + 优先级排序（致谢节最高）]
+   [Phase 0-B: 自动预扫描]
+     detect_aigc.py --section-split
+     → section-level ai_prob 评分
+     → 按分数建立处理队列（找不到脚本则启发式兜底）
        ↓
-   ┌───────── 对每个 chunk 串行执行 ──────────────────┐
+   [Phase 0-C/D: 切块 + 建立 aigc-reduce-todos.md]
+       ↓
+   ┌───────── 对每个 chunk 串行执行（按模型评分顺序）──────────────────┐
    │  Stage 0: aigc-reduce-destructure  (去结构化)⭐  │
    │  Stage 1: aigc-reduce-vocab        (词汇精炼)    │
    │  Stage 2: aigc-reduce-rhythm       (节奏变频)    │
@@ -107,9 +115,14 @@ Claude 会自动：
        ↓ 循环直到全部 chunk 处理完
    [Phase Final: 整稿一致性校对]
        ↓
+   [Phase Final 后验证（v4 新增）]
+     detect_aigc.py --section-split --compare baseline_results.json
+     → before/after delta 表格（每个 section 的降低量）
+     → 仍偏高的 section 标记为"建议继续处理"
+       ↓
    [⚠️ 强制 CNKI 验证循环（导出 Word 上传 CNKI）]
        ↓
-   [输出投稿就绪稿 + 修改报告 + 流水线 trace]
+   [输出：aigc-reduced稿 + 修改报告 + 流水线trace + before/after delta]
 ```
 
 ## ⚠️ 三条红线（7 步共享）

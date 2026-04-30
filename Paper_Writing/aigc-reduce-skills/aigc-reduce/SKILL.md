@@ -155,20 +155,68 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 
 ## Workflow
 
-### Phase 0: 接收 + 切块（必做）
+### Phase 0: 接收 + 预扫描 + 切块 + 优先级排序（必做·全自动）
 
-1. 解析 `$ARGUMENTS`：路径 → Read，文本 → 直接接收
-2. **自动分块**（按文件类型自适应）：
-   - LaTeX：按 `\section{}` / `\subsection{}` 切，跳过 `\begin{equation/figure/table/algorithm}`
-   - Markdown：按 `#` / `##` / `###` 切
-   - DOCX：先转 Markdown 再切
-   - 纯文本：双换行切段
-3. **优先级排序**（v3 更新，CNKI 实测 AIGC 率从高到低）：
+**用户只需输入一条指令：`/aigc降低 paper.tex`，Phase 0 全部自动执行，无需用户再操作。**
+
+#### 0-A：解析输入
+
+解析 `$ARGUMENTS`：路径 → Read，文本 → 直接接收。
+
+#### 0-B：自动预扫描（v4 新增·自动触发，无需手动调用 /aigc-scan）
+
+**LaTeX 文件优先走此步**（其他格式跳到 0-C）：
+
+1. 用 Glob 搜索 `detect_aigc.py` 绝对路径（搜索顺序：skill 同级目录 → `~/.claude/skills/` → 当前工作目录）
+2. **找到则立即运行**（不询问用户，不等待确认）：
+   ```bash
+   python /找到的路径/detect_aigc.py "$FILE" \
+       --section-split --label baseline \
+       --out ./aigc-scan-results --stdout-json
    ```
-   致谢节（acknowledgement）> 软件分层架构 > 三段式结论 > 文献综述 > 方法对比 > 实验设计 > 结果数据
+3. 捕获 stdout JSON，解析 `section_scores`：
+   ```json
+   {"section_scores": [
+     {"section_title": "致谢", "ai_prob": 0.52, "risk_label": "🚨 极高"},
+     {"section_title": "软件架构", "ai_prob": 0.38, "risk_label": "🔴 显著"},
+     ...
+   ]}
    ```
-4. 创建 `aigc-reduce-todos.md`
-5. **绝对不许跳过任何 chunk**
+4. 将 `section_scores` 按 `ai_prob` 降序排列 → **作为 Phase 1..N 的处理顺序**
+5. 打印预扫描摘要（单行，不打断流程）：
+   ```
+   [Phase 0 预扫描] 全文基线 AIGC: 15.2% | 高风险 section: 致谢(52%) 软件架构(38%) 相位特征(25%)
+   ```
+
+**找不到脚本或 Python 不可用 → 静默降级，不报错，不停顿**：
+```
+[Phase 0 预扫描] detect_aigc.py 不可用，使用启发式优先级
+优先级: 致谢节 > 软件分层架构 > 三段式结论 > 文献综述 > 方法对比 > 实验设计 > 结果数据
+```
+
+#### 0-C：自动分块（按文件类型）
+
+- LaTeX：按 `\section{}` / `\subsection{}` 切，跳过 `\begin{equation/figure/table/algorithm}`
+- Markdown：按 `#` / `##` / `###` 切
+- DOCX：先转 Markdown 再切
+- 纯文本：双换行切段
+
+#### 0-D：建立处理队列
+
+创建 `aigc-reduce-todos.md`，按预扫描评分（或启发式）排序的 chunk 列表：
+
+```markdown
+# aigc-reduce 处理队列
+# 优先级来源: 模型评分（detect_aigc.py）| 全文基线 AIGC: 15.2%
+
+- [ ] #1 | 致谢 | 52.1% 🚨 | Stage-0-致谢专项
+- [ ] #2 | 软件系统架构 | 38.4% 🔴 | Stage-0-去结构化
+- [ ] #3 | 第三章 相位特征 | 24.7% 🟡 | Stage-1,5
+- [ ] #4 | 第一章 引言 | 12.3% 🟡 | Stage-1,2,5
+- [low] #5 | 第四章 实验结果 | 4.2% ✅ | 低优先级，最后处理
+```
+
+**绝对不许跳过任何 chunk**（包括低优先级 chunk，全部跑完 7 步）。
 
 ### Phase 1..N: 逐 chunk 串行处理（7 步全开）
 
@@ -254,7 +302,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
        Stage 6 注入 2 处 cite
 ```
 
-### Phase Final: 整稿一致性校对（必做）
+### Phase Final: 整稿一致性校对 + 模型后验证（必做）
 
 1. 术语统一性检查
 2. 时态一致性
@@ -264,6 +312,37 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 6. 主语轮换抽查：任意 5 段，"本文/本课题/本章" 开头不超过 1-2 段
 7. **v3 新增**：致谢节二次检查——是否仍有平行句式残留
 
+**Step 8（v4 新增）：本地模型后验证 + before/after delta**
+
+如果 Phase 0 运行了预扫描（detect_aigc.py 可用），在整稿校对完成后运行后扫描：
+
+```bash
+# BASELINE_JSON = Phase 0 输出的 results_*_baseline.json 路径
+python /path/to/detect_aigc.py "$REDUCED_FILE" \
+    --section-split \
+    --label after_reduce \
+    --compare "$BASELINE_JSON" \
+    --out ./aigc-scan-results
+```
+
+解析输出，在 `aigc-reduce-report.md` 末尾附加 **Before/After Delta 表格**：
+
+```
+## 本地模型验证（before/after delta）
+
+全文 AIGC 概率: 15.2% → 3.1% (↓12.1%)
+
+| section | before | after | delta | 状态 |
+|---------|--------|-------|-------|------|
+| 致谢 | 52.1% | 4.2% | ↓47.9% | ✅ 已修 |
+| 软件架构 | 38.4% | 5.8% | ↓32.6% | ✅ 已修 |
+| 相位特征 | 24.7% | 19.1% | ↓5.6% | 🟡 仍偏高 |
+
+⚠️ 本地检测仅参考，CNKI 是终审。
+```
+
+如果有 section 仍然 `ai_prob ≥ 20%`（本地），标记为"建议再处理"，询问用户是否继续。
+
 ### ⚠️ Phase 强制 CNKI 验证循环（v3 新增·必做）
 
 1. **导出 Word**：`.tex` → DOCX（可用 pandoc 或 pdf2docx）
@@ -271,6 +350,19 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 3. **查看分段报告**：重点看"前部20%"和"后部20%"（风险最高区域）
 4. **如有显著段（红色）**：记录位置，针对性修改（参考三处修复手法）
 5. **循环直到无显著段**
+
+**本地模型 vs CNKI 校准（v4 新增）**：
+
+持续积累实测数据，帮助校准本地模型评分：
+
+| 本地 ai_prob 区间 | 历史 CNKI 对应 | 建议 |
+|----------------|-------------|------|
+| < 10% | 通常 < 5% CNKI | 安全，可跳过 |
+| 10%-30% | 5%-15% CNKI | 中等风险，建议处理 |
+| 30%-50% | 15%-30% CNKI | 高风险，必须处理 |
+| > 50% | > 30% CNKI | 极高风险，优先处理 |
+
+注：以上为经验性对应关系，不同论文偏差较大。**CNKI 永远是终审。**
 
 本地 detector（Hello-SimpleAI）仅用于快速初筛，CNKI 是终审。
 
