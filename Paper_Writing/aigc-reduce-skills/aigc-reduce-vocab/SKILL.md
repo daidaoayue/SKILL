@@ -1,11 +1,11 @@
 ---
 name: aigc-reduce-vocab
-description: "AIGC率降低·词汇精炼器（Stage 1/5）。根除 LLM 触发词（delve / foster / pivotal / underscore / multifaceted / intricate / tapestry / shed light on / 深入探讨 / 关键的 / 错综复杂 等），用精准学术术语替换。Triggers on: '词汇精炼', '降AIGC词汇', '清洗AI套话', 'remove AI words', 'vocabulary refine', 'aigc降低-词汇', 'aigc词汇'."
+description: "AIGC率降低·词汇精炼器（Stage 1/7）。根除 LLM 触发词（delve / foster / pivotal / underscore / multifaceted / intricate / tapestry / shed light on / 深入探讨 / 关键的 / 错综复杂 等）以及 CNKI 实测高频触发词，用精准学术术语替换。Triggers on: '词汇精炼', '降AIGC词汇', '清洗AI套话', 'remove AI words', 'vocabulary refine', 'aigc降低-词汇', 'aigc词汇'."
 argument-hint: [text-or-file-path]
 allowed-tools: Read, Write, Edit
 ---
 
-# AIGC率降低·词汇精炼器（Stage 1/5）
+# AIGC率降低·词汇精炼器（Stage 1/7）
 
 ## Role
 极其严苛的学术文字编辑。清洗手稿中所有可识别的"AI 生成词汇"，保持绝对学术精准度。
@@ -44,6 +44,35 @@ testament to, hallmark of, cornerstone of
 引领、纵深推进、聚焦、夯实、激活、释放潜力
 ```
 
+## CNKI 实测高频触发词（v3 新增·务必根除）
+
+基于两次 CNKI 实测标红段反向工程，以下词汇被 CNKI 重点检测：
+
+### 中文 CNKI 实测触发词
+```
+基于上述考虑、综合上述研究现状分析、综合上述分析、综合来看
+其优势在于...其代价是...（对仗模板）
+三方面困难、四个核心问题、三个层次、三个方面
+具体而言、具体来说（作段落引导句使用时）
+本课题对...采用...、本文针对...提出...（密集使用时）
+实现了...构建了一套...完整的参考路径
+深入研究、深入分析（泛用场景）
+凸显了...迫切需求、这些事件的共同特征是
+该现象提示：、机制分析显示：（引导句）
+满足了...需求、具有重要意义、具有广泛的应用前景
+```
+
+### 中文 CNKI 安全替代
+| 触发词 | 替代方向 |
+|--------|---------|
+| "基于上述考虑" | 直接陈述原因，删掉引导语 |
+| "综合上述研究现状分析" | 缩短为"从现有工作看" / 直接陈述问题 |
+| "三方面困难" | 删掉"三方面"概括，直接散文化叙述 |
+| "该现象提示：" | 改为"这个结果有点反直觉。" 或直接陈述发现 |
+| "机制分析显示：" | 改为"为什么有效？" 后接机制 |
+| "凸显了...迫切需求" | 改为直接描述问题现象 |
+| "具有重要意义" | 删除 / 改为具体的应用价值陈述 |
+
 ## Workflow
 
 ### Step 1: 接收输入
@@ -80,8 +109,8 @@ testament to, hallmark of, cornerstone of
 ```
 
 ## Cross-Skill Pipeline
-- **上游**：原稿（或 `/aigc降低` 总编排传入）
-- **本阶段**：Stage 1/5 ← 您在这里
+- **上游**：Stage 0: `aigc-reduce-destructure`（去结构化）
+- **本阶段**：Stage 1/7 ← 您在这里
 - **下游**：Stage 2: `aigc-reduce-rhythm`（节奏变频）
 
 ## Anti-Patterns

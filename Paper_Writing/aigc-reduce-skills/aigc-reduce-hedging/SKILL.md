@@ -1,11 +1,11 @@
 ---
 name: aigc-reduce-hedging
-description: "AIGC率降低·语义精细化工具（Stage 4/5）。软化 AI 文本绝对确定性，注入学术模糊限制语和方法论 caveat，把 prove / 证明了 / 确保了 等绝对化动词替换为 suggest / 暗示 / 表明 等克制版本。Triggers on: '语义精细化', '模糊限制语', '克制表达', 'hedging', 'caveat', 'aigc降低-精细化', 'aigc克制', '认识论校准'."
+description: "AIGC率降低·语义精细化工具（Stage 4/7，降级使用）。软化 AI 文本绝对确定性，注入学术模糊限制语和方法论 caveat，把 prove / 证明了 / 确保了 等绝对化动词替换为 suggest / 暗示 / 表明 等克制版本。⚠️ 注意：过度 hedging（在...条件下/暗示了过密）反而被 CNKI 标 AI，仅在 L4 因果断言处使用。Triggers on: '语义精细化', '模糊限制语', '克制表达', 'hedging', 'caveat', 'aigc降低-精细化', 'aigc克制', '认识论校准'."
 argument-hint: [text-or-file-path]
 allowed-tools: Read, Write, Edit
 ---
 
-# AIGC率降低·语义精细化工具（Stage 4/5）
+# AIGC率降低·语义精细化工具（Stage 4/7，降级使用）
 
 ## Role
 极其谨慎的资深研究员。软化 AI 生成文本中那种傲慢的、绝对的确定性，并注入高度专业的学术模糊限制语。
@@ -109,8 +109,8 @@ allowed-tools: Read, Write, Edit
 
 ## Cross-Skill Pipeline
 - **上游**：Stage 3: `aigc-reduce-cohesion`（逻辑衔接）
-- **本阶段**：Stage 4/5 ← 您在这里
-- **下游**：Stage 5: `aigc-reduce-perplexity`（困惑度重构）
+- **本阶段**：Stage 4/7 ← 您在这里（降级使用：仅 L4 因果断言处加 caveat）
+- **下游**：Stage 5: `aigc-reduce-perplexity`（困惑度重构+思维痕迹注入）
 
 ## Anti-Patterns
 - 不要让每句都"可能"、"也许"——会让审稿人觉得作者没自信

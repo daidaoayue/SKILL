@@ -1,11 +1,11 @@
 ---
 name: aigc-reduce-rhythm
-description: "AIGC率降低·节奏变频师（Stage 2/5）。最大化句长方差（Burstiness），打破 AI 均匀节奏，长复合句之间穿插 5-8 词短句，被动迂回长句转主动穿透短句。Triggers on: '节奏变频', '句法节奏', '突发性', 'burstiness', 'sentence rhythm', 'aigc降低-节奏', 'aigc节奏'."
+description: "AIGC率降低·节奏变频师（Stage 2/7）。最大化句长方差（Burstiness）+ 段长不齐，打破 AI 均匀节奏，长复合句之间穿插 5-8 词短句，被动迂回长句转主动穿透短句。Triggers on: '节奏变频', '句法节奏', '突发性', 'burstiness', 'sentence rhythm', 'aigc降低-节奏', 'aigc节奏'."
 argument-hint: [text-or-file-path]
 allowed-tools: Read, Write, Edit
 ---
 
-# AIGC率降低·节奏变频师（Stage 2/5）
+# AIGC率降低·节奏变频师（Stage 2/7）
 
 ## Role
 精通散文节奏的大师。最大化文本"突发性（Burstiness）"，打破 AI 单调死板的均匀句长，模仿人类自然认知的节奏波动。
@@ -72,7 +72,7 @@ allowed-tools: Read, Write, Edit
 
 ## Cross-Skill Pipeline
 - **上游**：Stage 1: `aigc-reduce-vocab`（词汇精炼）
-- **本阶段**：Stage 2/5 ← 您在这里
+- **本阶段**：Stage 2/7 ← 您在这里
 - **下游**：Stage 3: `aigc-reduce-cohesion`（逻辑衔接）
 
 ## Anti-Patterns

@@ -1,11 +1,11 @@
 ---
 name: aigc-reduce-cohesion
-description: "AIGC率降低·逻辑衔接专家（Stage 3/5）。消除 Furthermore / Moreover / Additionally / Therefore / 此外 / 而且 / 因此 等机械过渡词，用语义链（Semantic Chaining）让段落自然焊接：上句句尾概念回荡在下句主语。Triggers on: '逻辑衔接', '过渡词清除', '语义链', 'cohesion', 'semantic chaining', 'aigc降低-衔接', 'aigc衔接'."
+description: "AIGC率降低·逻辑衔接专家（Stage 3/7）。消除 Furthermore / Moreover / Additionally / Therefore / 此外 / 而且 / 因此 等机械过渡词，用语义链（Semantic Chaining）让段落自然焊接：上句句尾概念回荡在下句主语。Triggers on: '逻辑衔接', '过渡词清除', '语义链', 'cohesion', 'semantic chaining', 'aigc降低-衔接', 'aigc衔接'."
 argument-hint: [text-or-file-path]
 allowed-tools: Read, Write, Edit
 ---
 
-# AIGC率降低·逻辑衔接专家（Stage 3/5）
+# AIGC率降低·逻辑衔接专家（Stage 3/7）
 
 ## Role
 结构语言学家。消灭那些偷懒的、机械的过渡词，利用概念的重叠把段落丝滑地编织在一起。
@@ -104,7 +104,7 @@ Good:
 
 ## Cross-Skill Pipeline
 - **上游**：Stage 2: `aigc-reduce-rhythm`（节奏变频）
-- **本阶段**：Stage 3/5 ← 您在这里
+- **本阶段**：Stage 3/7 ← 您在这里
 - **下游**：Stage 4: `aigc-reduce-hedging`（语义精细化）
 
 ## Anti-Patterns
