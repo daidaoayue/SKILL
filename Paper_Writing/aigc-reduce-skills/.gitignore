@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python (in case anyone adds tooling later)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Logs / temp
+*.log
+*.tmp
+node_modules/
+
+# Claude Code working artifacts (用户跑流水线时的产出，不进仓库)
+aigc-reduce-todos.md
+aigc-reduce-report.md
+aigc-reduce-trace.md
+*_aigc-reduced.*
