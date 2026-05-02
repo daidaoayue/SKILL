@@ -42,8 +42,9 @@ EXTENSIONS = {
     "blind": EXT / "thesis-blind-review" / "scripts" / "anonymize.py",
 }
 
-# 真接通 aigc-reduce skill（detect_aigc.py 是用户的真可执行脚本）
+# 真接通 aigc-reduce skill（detect_aigc.py + aigc_reducer.py 都是用户的真可执行脚本）
 AIGC_REDUCE_DETECT = THIS_DIR.parent / "aigc-reduce-skills" / "detect_aigc" / "detect_aigc.py"
+AIGC_REDUCE_REDUCER = THIS_DIR.parent / "aigc-reduce-skills" / "aigc_reducer.py"
 
 
 def load_config(config_path: Path) -> dict:
@@ -239,6 +240,66 @@ def phase_blind(paper_root: Path, identity_path: Path | None, output_dir: Path) 
     return run_subprocess(cmd, "Phase · thesis-blind-review", timeout=120)
 
 
+def phase_aigc_reduce_full(main_tex: Path, output_dir: Path) -> dict:
+    """Phase: 真调用 aigc_reducer.py 7 stage 真改写每个章节文件。"""
+    import os as _os
+    if not AIGC_REDUCE_REDUCER.exists():
+        return {"label": "Phase · aigc-reduce 7-stage", "success": False,
+                "error": f"找不到 {AIGC_REDUCE_REDUCER}"}
+
+    out_dir = output_dir / "aigc-reduce-output"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    paper_root = main_tex.parent
+    chapter_files = []
+    for sub in ["data", "sections", "."]:
+        d = paper_root / sub
+        if d.exists():
+            for pat in ["chapter*.tex", "abstract.tex", "conclusion.tex"]:
+                chapter_files.extend(sorted(d.glob(pat)))
+    chapter_files = sorted({f for f in chapter_files
+                            if "BEFORE" not in f.name and "aigc-reduced" not in f.name
+                            and "_reduced" not in f.name})
+
+    print(f"\n{'─' * 70}")
+    print(f"▶ Phase · aigc-reduce 7-stage 真处理")
+    print(f"  对 {len(chapter_files)} 个章节真跑 aigc_reducer.py 7 stage")
+    print(f"{'─' * 70}")
+
+    env = {**_os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+    chapter_results = []
+    for tex in chapter_files:
+        out_tex = out_dir / f"{tex.stem}_reduced.tex"
+        report = out_dir / f"{tex.stem}_report.md"
+        cmd = [sys.executable, str(AIGC_REDUCE_REDUCER), str(tex),
+               "-o", str(out_tex), "--report", str(report), "--stages", "all"]
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=120,
+                               encoding="utf-8", errors="replace", env=env)
+            ok = (r.returncode == 0)
+            # 抽 7 stage 总改写数
+            import re as _re
+            total_changes = 0
+            if r.stdout:
+                m = _re.search(r"7 stage 总计:.*?(\d+)\s*次实际操作", r.stdout)
+                if m:
+                    total_changes = int(m.group(1))
+            print(f"  {'✅' if ok else '❌'} {tex.name:35s} → {total_changes:4d} 次真改写")
+            chapter_results.append({"file": tex.name, "success": ok,
+                                    "changes": total_changes})
+        except Exception as e:
+            print(f"  ❌ {tex.name}: {e}")
+            chapter_results.append({"file": tex.name, "success": False, "error": str(e)})
+
+    pass_count = sum(1 for r in chapter_results if r.get("success"))
+    return {
+        "label": "Phase · aigc-reduce 7-stage 真处理",
+        "success": pass_count == len(chapter_results),
+        "chapters_processed": len(chapter_results),
+        "chapter_results": chapter_results,
+    }
+
+
 def phase_aigc_scan(main_tex: Path, output_dir: Path) -> dict:
     """Phase: 真调用 aigc-reduce 的 detect_aigc.py 做 AIGC 预扫描。
 
@@ -329,7 +390,7 @@ def main() -> int:
     parser.add_argument("--config", type=Path, default=None,
                         help="thesis.config.yml 路径（默认在项目根找）")
     parser.add_argument("--phase",
-                        choices=["all", "scan", "format", "abstract", "pdf", "word", "defense", "blind", "aigc"],
+                        choices=["all", "scan", "format", "abstract", "pdf", "word", "defense", "blind", "aigc", "aigc_reduce"],
                         default="all", help="只跑某个阶段")
     parser.add_argument("--output", type=Path, default=None,
                         help="输出目录（默认 testskill/orchestrator_run）")
@@ -417,6 +478,10 @@ def main() -> int:
     # Phase aigc-reduce 真接通（detect_aigc.py 真调用）
     if args.phase in ("all", "aigc") and main_tex:
         results.append(phase_aigc_scan(main_tex, output_dir))
+
+    # Phase aigc-reduce 7 stage 真处理（aigc_reducer.py 真改写每章节）
+    if args.phase in ("all", "aigc_reduce") and main_tex:
+        results.append(phase_aigc_reduce_full(main_tex, output_dir))
 
     # 汇总报告
     print()
