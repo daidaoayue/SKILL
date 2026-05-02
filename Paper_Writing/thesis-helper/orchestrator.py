@@ -42,6 +42,9 @@ EXTENSIONS = {
     "blind": EXT / "thesis-blind-review" / "scripts" / "anonymize.py",
 }
 
+# 真接通 aigc-reduce skill（detect_aigc.py 是用户的真可执行脚本）
+AIGC_REDUCE_DETECT = THIS_DIR.parent / "aigc-reduce-skills" / "detect_aigc" / "detect_aigc.py"
+
 
 def load_config(config_path: Path) -> dict:
     """读 thesis.config.yml（用 PyYAML 或简易解析）。"""
@@ -55,15 +58,21 @@ def load_config(config_path: Path) -> dict:
 
 
 def find_paper_root(project_dir: Path, config: dict) -> Path | None:
-    """根据 config.paths.paper_root 找论文实际目录。"""
+    """根据 config.paths.paper_root 找论文实际目录。绝对路径优先。"""
     if config.get("paths", {}).get("paper_root"):
         rel = config["paths"]["paper_root"]
-        candidate = (project_dir / rel).resolve()
+        # 绝对路径直接用
+        candidate = Path(rel)
+        if not candidate.is_absolute():
+            candidate = (project_dir / rel).resolve()
         if candidate.exists():
             return candidate
-    # 兜底：搜 main.tex
+    # 兜底：搜 main.tex（优先 thesis 目录，避免选 JRS 论文）
     for p in project_dir.rglob("main.tex"):
-        if "paper_writing" in str(p) or "thesis" in str(p).lower():
+        if "thesis" in str(p).lower() or "毕设" in str(p):
+            return p.parent
+    for p in project_dir.rglob("main.tex"):
+        if "paper_writing" in str(p):
             return p.parent
     return None
 
@@ -123,7 +132,7 @@ def run_subprocess(cmd: list, label: str, timeout: int = 300) -> dict:
 
 def phase_0_scan(project_dir: Path, config_path: Path | None, output_dir: Path) -> dict:
     """Phase 0: 项目扫描。"""
-    cmd = ["python", str(SCANNER), str(project_dir),
+    cmd = [sys.executable, str(SCANNER), str(project_dir),
            "--output-dir", str(output_dir)]
     if config_path and config_path.exists():
         cmd += ["--config", str(config_path)]
@@ -132,7 +141,7 @@ def phase_0_scan(project_dir: Path, config_path: Path | None, output_dir: Path) 
 
 def phase_format(main_tex: Path, school: str, output_dir: Path) -> dict:
     """Phase: 格式合规检查。"""
-    cmd = ["python", str(EXTENSIONS["format"]), str(main_tex),
+    cmd = [sys.executable, str(EXTENSIONS["format"]), str(main_tex),
            "--school", school,
            "--report", str(output_dir / "format_check.md"),
            "--json", str(output_dir / "format_check.json")]
@@ -141,7 +150,7 @@ def phase_format(main_tex: Path, school: str, output_dir: Path) -> dict:
 
 def phase_abstract(abstract_tex: Path, thesis_type: str, output_dir: Path) -> dict:
     """Phase: 中英摘要检查。"""
-    cmd = ["python", str(EXTENSIONS["abstract"]), str(abstract_tex),
+    cmd = [sys.executable, str(EXTENSIONS["abstract"]), str(abstract_tex),
            "--thesis-type", thesis_type,
            "--report", str(output_dir / "abstract_check.md"),
            "--json", str(output_dir / "abstract_check.json")]
@@ -150,7 +159,7 @@ def phase_abstract(abstract_tex: Path, thesis_type: str, output_dir: Path) -> di
 
 def phase_word(main_tex: Path, output_dir: Path) -> dict:
     """Phase: LaTeX 转 Word。"""
-    cmd = ["python", str(EXTENSIONS["word"]), str(main_tex),
+    cmd = [sys.executable, str(EXTENSIONS["word"]), str(main_tex),
            "-o", str(output_dir / "thesis.docx"),
            "--report", str(output_dir / "convert_report.json")]
     return run_subprocess(cmd, "Phase · latex-to-word", timeout=600)
@@ -158,7 +167,7 @@ def phase_word(main_tex: Path, output_dir: Path) -> dict:
 
 def phase_defense(paper_root: Path, duration: int, output_dir: Path) -> dict:
     """Phase: 答辩素材生成。"""
-    cmd = ["python", str(EXTENSIONS["defense"]), str(paper_root),
+    cmd = [sys.executable, str(EXTENSIONS["defense"]), str(paper_root),
            "--duration", str(duration),
            "--output", str(output_dir / "defense")]
     return run_subprocess(cmd, "Phase · thesis-defense-prep", timeout=120)
@@ -166,12 +175,93 @@ def phase_defense(paper_root: Path, duration: int, output_dir: Path) -> dict:
 
 def phase_blind(paper_root: Path, identity_path: Path | None, output_dir: Path) -> dict:
     """Phase: 盲审版生成。"""
-    cmd = ["python", str(EXTENSIONS["blind"]), str(paper_root),
+    cmd = [sys.executable, str(EXTENSIONS["blind"]), str(paper_root),
            "--output", str(output_dir / "thesis_blind"),
            "--report", str(output_dir / "blind_review_report.md")]
     if identity_path and identity_path.exists():
         cmd += ["--identity", str(identity_path)]
     return run_subprocess(cmd, "Phase · thesis-blind-review", timeout=120)
+
+
+def phase_aigc_scan(main_tex: Path, output_dir: Path) -> dict:
+    """Phase: 真调用 aigc-reduce 的 detect_aigc.py 做 AIGC 预扫描。
+
+    优雅降级：torch / detect_aigc.py 不可用时，输出降级提示但不阻塞流程。
+    """
+    if not AIGC_REDUCE_DETECT.exists():
+        print(f"\n{'─' * 70}")
+        print(f"▶ Phase · aigc-reduce detect_aigc")
+        print(f"  ⚠️  跳过：找不到 {AIGC_REDUCE_DETECT}")
+        print(f"  说明：thesis-helper 设计上接 ../aigc-reduce-skills/，")
+        print(f"        把 thesis-helper 装到与 aigc-reduce-skills 同一父目录即可启用")
+        return {"label": "Phase · aigc-reduce detect_aigc", "success": False,
+                "error": "detect_aigc.py 路径不存在"}
+
+    aigc_out = output_dir / "aigc-scan-results"
+    aigc_out.mkdir(parents=True, exist_ok=True)
+
+    # 找所有真章节文件（main.tex 是入口只有几行，要扫真内容）
+    import os as _os
+    import re as _re
+    paper_root = main_tex.parent
+    chapter_files = []
+    for sub in ["data", "sections", "."]:
+        d = paper_root / sub
+        if d.exists():
+            for pat in ["chapter*.tex", "abstract.tex", "conclusion.tex"]:
+                chapter_files.extend(sorted(d.glob(pat)))
+    chapter_files = sorted({f for f in chapter_files
+                            if "BEFORE" not in f.name
+                            and "aigc-reduced" not in f.name})
+
+    print(f"\n{'─' * 70}")
+    print(f"▶ Phase · aigc-reduce detect_aigc (真扫描)")
+    print(f"  paper_root: {paper_root}")
+    print(f"  扫描 {len(chapter_files)} 个真章节文件")
+    print(f"{'─' * 70}")
+
+    if not chapter_files:
+        return {"label": "Phase · aigc-reduce detect_aigc", "success": False,
+                "error": "未找到任何 chapter*.tex / abstract.tex / conclusion.tex"}
+
+    env = {**_os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+    chapter_results = []
+    for tex_file in chapter_files:
+        label = tex_file.stem
+        cmd = [sys.executable, str(AIGC_REDUCE_DETECT), str(tex_file),
+               "--section-split", "--label", label, "--out", str(aigc_out)]
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=600,
+                               encoding="utf-8", errors="replace", env=env)
+            ok = (r.returncode == 0)
+            ai_rate = "?"
+            if r.stdout:
+                m = _re.search(r"全文加权 AIGC 概率:\s*([\d.]+)%", r.stdout)
+                if m:
+                    ai_rate = f"{m.group(1)}%"
+            print(f"  {'✅' if ok else '❌'} {tex_file.name:35s} → AI={ai_rate}")
+            chapter_results.append({"file": tex_file.name, "success": ok, "ai_rate": ai_rate})
+        except Exception as e:
+            print(f"  ❌ {tex_file.name}: {e}")
+            chapter_results.append({"file": tex_file.name, "success": False, "error": str(e)})
+
+    pass_count = sum(1 for r in chapter_results if r.get("success"))
+    result = {
+        "label": "Phase · aigc-reduce detect_aigc (真扫描)",
+        "success": pass_count == len(chapter_results),
+        "chapters_scanned": len(chapter_results),
+        "chapters_passed": pass_count,
+        "chapter_results": chapter_results,
+    }
+
+    # 优雅降级：torch 缺失等情况
+    if not result.get("success"):
+        result["graceful_degraded"] = True
+        result["next_step_hint"] = (
+            "若需启用 aigc-reduce 真扫描，请：pip install torch transformers"
+            " （首次运行会下载 Hello-SimpleAI/chatgpt-detector-roberta 约 500MB）"
+        )
+    return result
 
 
 def main() -> int:
@@ -183,7 +273,7 @@ def main() -> int:
     parser.add_argument("--config", type=Path, default=None,
                         help="thesis.config.yml 路径（默认在项目根找）")
     parser.add_argument("--phase",
-                        choices=["all", "scan", "format", "abstract", "word", "defense", "blind"],
+                        choices=["all", "scan", "format", "abstract", "word", "defense", "blind", "aigc"],
                         default="all", help="只跑某个阶段")
     parser.add_argument("--output", type=Path, default=None,
                         help="输出目录（默认 testskill/orchestrator_run）")
@@ -263,6 +353,10 @@ def main() -> int:
     # Phase blind
     if args.phase in ("all", "blind") and paper_root:
         results.append(phase_blind(paper_root, args.identity, output_dir))
+
+    # Phase aigc-reduce 真接通（detect_aigc.py 真调用）
+    if args.phase in ("all", "aigc") and main_tex:
+        results.append(phase_aigc_scan(main_tex, output_dir))
 
     # 汇总报告
     print()
