@@ -46,6 +46,67 @@ def check_pandoc() -> tuple[bool, str]:
         return False, f"pandoc 检查失败: {e}"
 
 
+def check_xelatex() -> tuple[bool, str]:
+    """检查 xelatex 是否可用。"""
+    if shutil.which("xelatex") is None:
+        return False, "xelatex 未找到（安装 MiKTeX/TeX Live）"
+    return True, "xelatex 可用"
+
+
+def check_pdf2docx() -> tuple[bool, str]:
+    """检查 pdf2docx 是否可用（路径 D 兜底用）。"""
+    try:
+        from pdf2docx import Converter  # noqa: F401
+        return True, "pdf2docx 可用"
+    except ImportError:
+        return False, "pdf2docx 未安装（pip install pdf2docx）"
+
+
+def convert_via_xelatex_pdf2docx(tex_path: Path, output_path: Path) -> tuple[bool, str]:
+    """
+    路径 D（v0.5.3 新增）: 用现有 PDF（或重新 xelatex 编译）→ pdf2docx → docx
+    用于绕过 pandoc 解析 .sty 失败的场景（如 gbt7714.sty 与 pandoc 冲突）。
+    """
+    ok, msg = check_xelatex()
+    if not ok:
+        return False, f"路径 D 失败: {msg}"
+    ok, msg = check_pdf2docx()
+    if not ok:
+        return False, f"路径 D 失败: {msg}"
+
+    pdf_path = tex_path.with_suffix(".pdf")
+
+    # 1. PDF 已存在则直接用；否则尝试 xelatex 编译
+    if not pdf_path.exists():
+        try:
+            subprocess.run(
+                ["xelatex", "-interaction=nonstopmode", "-halt-on-error", str(tex_path.name)],
+                cwd=tex_path.parent, capture_output=True, timeout=300,
+            )
+            # 第二次跑解决目录/引用
+            subprocess.run(
+                ["xelatex", "-interaction=nonstopmode", str(tex_path.name)],
+                cwd=tex_path.parent, capture_output=True, timeout=300,
+            )
+        except subprocess.TimeoutExpired:
+            return False, "xelatex 编译超时（>300s）"
+        except Exception as e:
+            return False, f"xelatex 异常: {e}"
+
+    if not pdf_path.exists():
+        return False, "xelatex 没生成 PDF（请检查 .tex 编译错误）"
+
+    # 2. PDF → docx
+    try:
+        from pdf2docx import Converter
+        cv = Converter(str(pdf_path))
+        cv.convert(str(output_path))
+        cv.close()
+        return True, f"OK (路径 D: pdf2docx 从 {pdf_path.name})"
+    except Exception as e:
+        return False, f"pdf2docx 异常: {e}"
+
+
 def detect_complexity(tex_path: Path) -> dict:
     """统计 .tex 内的复杂度：公式/引用/表格数量。"""
     try:
@@ -203,8 +264,8 @@ def main() -> int:
           f"章={complexity['chapter_count']} 节={complexity['section_count']}")
     print(f"  子文件: {len(complexity['include_files'])} 个")
 
-    # 3. 转换
-    print(f"[3/4] pandoc 转换 → {output}")
+    # 3. 转换 — 路径 A (pandoc) 失败自动回退到路径 D (xelatex+pdf2docx)
+    print(f"[3/4] 路径 A · pandoc 转换 → {output}")
     ok, msg = convert_with_pandoc(
         args.input_tex, output,
         template=args.template,
@@ -213,7 +274,12 @@ def main() -> int:
     )
     print(f"  {'✅' if ok else '❌'} {msg}")
     if not ok:
-        return 4
+        print(f"\n[3.5/4] 路径 A 失败，自动回退到路径 D · xelatex+pdf2docx")
+        ok, msg = convert_via_xelatex_pdf2docx(args.input_tex, output)
+        print(f"  {'✅' if ok else '❌'} {msg}")
+        if not ok:
+            print(f"\n两条路径都失败。建议手动检查 .tex 编译错误。")
+            return 4
 
     # 4. 验证
     print(f"[4/4] python-docx 验证")
