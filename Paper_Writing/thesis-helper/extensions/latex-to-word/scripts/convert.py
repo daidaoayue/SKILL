@@ -62,6 +62,114 @@ def check_pdf2docx() -> tuple[bool, str]:
         return False, "pdf2docx 未安装（pip install pdf2docx）"
 
 
+def convert_via_pandoc_preprocessed(
+    tex_path: Path, output_path: Path,
+    template: Path | None = None,
+    bibliography: Path | None = None,
+) -> tuple[bool, str]:
+    """
+    路径 B（v0.5.6 新增）: 预处理 .tex 移除冲突宏包后 pandoc 转，得到正确格式 docx。
+
+    针对学校模板（buaathesis 等）+ gbt7714 等 pandoc 不识别的宏包：
+      - \\documentclass{buaathesis} → \\documentclass[UTF8]{ctexart}
+      - \\usepackage{gbt7714} → 删除
+      - \\renewcommand{\\cite} 上标式 → 删除
+      - \\citestyle{numerical} → 删除
+      - \\chapter → \\section（ctexart 没 chapter）
+    然后跑 pandoc 真直转，输出干净 docx（远小于 pdf2docx 反转的）。
+    """
+    if shutil.which("pandoc") is None:
+        return False, "pandoc 未安装"
+
+    tmp_tex = tex_path.parent / f"{tex_path.stem}_pandoc_preprocessed.tex"
+    try:
+        original = tex_path.read_text(encoding="utf-8", errors="replace")
+        base_dir = tex_path.parent
+
+        # 提取 \include / \input 的章节列表（保持顺序）
+        body_includes = []
+        for m in re.finditer(r"\\(?:include|input)\{([^}]+)\}", original):
+            body_includes.append(m.group(1))
+
+        def resolve_include(inc: str) -> Path | None:
+            """解析 \\include 的路径。"""
+            for cand in [base_dir / f"{inc}.tex", base_dir / inc, base_dir / f"{inc}/main.tex"]:
+                if cand.exists():
+                    return cand
+            return None
+
+        def normalize_chapter(text: str) -> str:
+            """替换 buaathesis 自定义命令为 pandoc 友好版。"""
+            # 中英文摘要环境
+            text = re.sub(r"\\begin\{cabstract\}", r"\\section*{摘要}\n", text)
+            text = re.sub(r"\\end\{cabstract\}", r"", text)
+            text = re.sub(r"\\begin\{eabstract\}", r"\\section*{Abstract}\n", text)
+            text = re.sub(r"\\end\{eabstract\}", r"", text)
+            # 关键词命令
+            text = re.sub(r"\\keywords\{([^}]+)\}", r"\n\\noindent \\textbf{关键词：} \1\n", text)
+            text = re.sub(r"\\ekeywords\{([^}]+)\}", r"\n\\noindent \\textbf{Keywords:} \1\n", text)
+            # 去掉嵌套 \markboth / \markright（pandoc 不认）
+            text = re.sub(r"\\markboth\{[^}]*\}\{[^}]*\}", "", text)
+            text = re.sub(r"\\markright\{[^}]*\}", "", text)
+            # ctexbook 支持 \chapter，不用降级
+            # 删除 buaathesis 特殊命令（含可能的参数）
+            for cmd in ["pagestyle", "thispagestyle", "mainmatter", "frontmatter",
+                        "backmatter", "appendix", "maketitle", "tableofcontents",
+                        "fenkai", "makecover", "kaiti", "lishu", "fangsong",
+                        "include", "input"]:  # \include / \input 已经被我们 inline 了
+                text = re.sub(r"\\" + cmd + r"\b\s*(?:\[[^\]]*\])?\s*(?:\{[^}]*\})?", "", text)
+            # 双行注释
+            text = re.sub(r"^\s*%.*$", "", text, flags=re.MULTILINE)
+            return text
+
+        # 构造合并后的 .tex（章节内容 inline 进来，不靠 \input）
+        new_text = (
+            "% pandoc 预处理版（路径 B 自动生成 - merged inline）\n"
+            "\\documentclass[UTF8,12pt]{ctexbook}\n"
+            "\\usepackage{amsmath,amssymb,amsfonts,bm}\n"
+            "\\usepackage{graphicx}\n"
+            "\\usepackage{booktabs,longtable,array,multirow}\n"
+            "\\usepackage{xcolor}\n"
+            "\\usepackage{hyperref}\n"
+            "\\usepackage{geometry}\n"
+            "\\geometry{a4paper,margin=2.5cm}\n"
+            "\\graphicspath{{" + str(base_dir).replace("\\", "/") + "/figure/}}\n"
+            "\n\\begin{document}\n\n"
+        )
+        for inc in body_includes:
+            # 跳过封面 / 任务书 / 学校信息
+            if any(skip in inc for skip in ["com_info", "bachelor_info", "/assign", "acknowledgement"]):
+                continue
+            sub_path = resolve_include(inc)
+            if sub_path:
+                sub_text = sub_path.read_text(encoding="utf-8", errors="replace")
+                new_text += f"\n% === {inc} ===\n"
+                new_text += normalize_chapter(sub_text)
+                new_text += "\n"
+            else:
+                new_text += f"% [skip: {inc} not found]\n"
+        new_text += "\n\\end{document}\n"
+
+        tmp_tex.write_text(new_text, encoding="utf-8")
+
+        cmd = ["pandoc", str(tmp_tex), "--from=latex", "--to=docx",
+               "--toc", "--toc-depth=3", "-o", str(output_path),
+               "--resource-path", str(tex_path.parent)]
+        if bibliography and bibliography.exists():
+            cmd += ["--bibliography", str(bibliography)]
+        if template and template.exists():
+            cmd += ["--reference-doc", str(template)]
+
+        result = subprocess.run(cmd, cwd=tex_path.parent, capture_output=True,
+                               text=True, timeout=180, encoding="utf-8", errors="replace")
+        if output_path.exists() and output_path.stat().st_size > 1024:
+            return True, f"OK (路径 B: pandoc + 预处理)"
+        return False, f"pandoc 失败: {result.stderr[:300]}"
+    finally:
+        if tmp_tex.exists():
+            tmp_tex.unlink()
+
+
 def convert_via_xelatex_pdf2docx(tex_path: Path, output_path: Path) -> tuple[bool, str]:
     """
     路径 D（v0.5.3 新增）: 用现有 PDF（或重新 xelatex 编译）→ pdf2docx → docx
@@ -264,8 +372,8 @@ def main() -> int:
           f"章={complexity['chapter_count']} 节={complexity['section_count']}")
     print(f"  子文件: {len(complexity['include_files'])} 个")
 
-    # 3. 转换 — 路径 A (pandoc) 失败自动回退到路径 D (xelatex+pdf2docx)
-    print(f"[3/4] 路径 A · pandoc 转换 → {output}")
+    # 3. 转换 — 路径优先级 A → B → D
+    print(f"[3/4] 路径 A · pandoc 直转 → {output}")
     ok, msg = convert_with_pandoc(
         args.input_tex, output,
         template=args.template,
@@ -274,11 +382,18 @@ def main() -> int:
     )
     print(f"  {'✅' if ok else '❌'} {msg}")
     if not ok:
-        print(f"\n[3.5/4] 路径 A 失败，自动回退到路径 D · xelatex+pdf2docx")
+        print(f"\n[3.3/4] 路径 A 失败，尝试路径 B · pandoc + 预处理（推荐，docx 格式好）")
+        ok, msg = convert_via_pandoc_preprocessed(
+            args.input_tex, output,
+            template=args.template, bibliography=args.bibliography,
+        )
+        print(f"  {'✅' if ok else '❌'} {msg}")
+    if not ok:
+        print(f"\n[3.6/4] 路径 B 失败，最后兜底路径 D · xelatex+pdf2docx（格式较差）")
         ok, msg = convert_via_xelatex_pdf2docx(args.input_tex, output)
         print(f"  {'✅' if ok else '❌'} {msg}")
         if not ok:
-            print(f"\n两条路径都失败。建议手动检查 .tex 编译错误。")
+            print(f"\n三条路径都失败。建议手动检查 .tex 编译错误。")
             return 4
 
     # 4. 验证
