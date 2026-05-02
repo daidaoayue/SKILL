@@ -1,0 +1,94 @@
+# ============================================================================
+# 示例配置：IEEE 期刊投稿（IEEE Transactions / IEEE_JOURNAL）
+# ----------------------------------------------------------------------------
+# 用法：复制到论文项目根目录，重命名为 thesis.config.yml
+# ============================================================================
+
+thesis_type: journal
+venue: IEEE_JOURNAL                  # IEEE_JOURNAL / IEEE_CONF / NeurIPS / ACL / ...
+language: en
+detector: none                       # 期刊跳过 CNKI
+
+paths:
+  project_root: .
+  output_dir: ./paper
+  format_rules: ./templates          # IEEE .cls 模板
+  bib_file: ./references.bib
+
+targets:
+  word_count_min: 4000               # 期刊正文字数（words）
+  word_count_max: 12000
+  page_count_max: 14                 # IEEE Transactions 推荐
+  references_count_in_pages: true    # IEEE 参考文献计入页数
+
+school_rules:
+  ieee_journal:
+    venue_code: IEEE_JOURNAL
+    skip_aigc_reduce: true
+    page_count_max: 14
+    references_count_in_pages: true
+    figure_format: vector_pdf
+    cite_style: ieee
+
+pipeline:
+  paper_plan: true
+  paper_figure: true
+  paper_write: true
+  paper_compile: true
+  paper_review: true
+  aigc_reduce: false                 # 期刊跳过
+  improvement_rounds: 2
+  lit_review: true
+  novelty_check: true                # 投稿前必查
+
+integrations:
+  arxiv: true
+  semantic_scholar: true
+  research_lit: true
+  comm_lit_review: false             # 看领域
+  claude_paper_study: true           # 精读相关工作
+  novelty_check: true
+  proof_writer: true                 # 期刊理论严谨
+  formula_derivation: true
+  scientific_visualization: true     # vector PDF 必备
+  matplotlib_tvhahn: false
+  mermaid_diagram: false
+  paper_illustration: true
+  result_to_claim: true
+  ablation_planner: true             # 投稿前补 ablation
+  rebuttal: false                    # 投稿后才开
+  paper_reviewer: true
+  paper_slides: false                # 期刊不用
+  paper_poster: false
+  docx: false                        # 期刊用 LaTeX
+  pptx: false
+  pdf: false
+
+extensions:
+  latex_to_word: false               # 期刊不用
+  thesis_defense_prep: false
+  thesis_blind_review: false
+  bilingual_abstract: false          # 单语英文摘要
+  format_compliance_checker: false   # 用 IEEE .cls 直接合规
+
+narrative:
+  report_path: ./NARRATIVE_REPORT.md
+  topic: ""
+  bilingual: false                   # 期刊纯英文
+
+platform:
+  primary_ai: claude
+  auto_compile_targets:
+    - claude
+
+advanced:
+  scan_excludes:
+    - node_modules
+    - .git
+    - __pycache__
+    - .venv
+    - dist
+    - checkpoints
+    - dataset
+  data_file_max_mb: 100
+  cnki_validation_required: false

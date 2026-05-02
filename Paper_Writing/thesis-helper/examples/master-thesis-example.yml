@@ -1,0 +1,118 @@
+# ============================================================================
+# 示例配置：清华大学硕士毕设
+# ----------------------------------------------------------------------------
+# 用法：复制到论文项目根目录，重命名为 thesis.config.yml
+# 严格阈值：AIGC ≤ 5% / 查重 ≤ 5%
+# ============================================================================
+
+thesis_type: master-thesis
+venue: 清华大学
+language: zh
+detector: CNKI
+
+paths:
+  project_root: .
+  output_dir: ./paper
+  format_rules: ./格式要求          # 清华硕士毕设模板
+  bib_file: ./references.bib
+
+targets:
+  aigc_rate_max: 5                 # 硕士严格阈值
+  duplicate_rate_max: 5
+  word_count_min: 50000            # 硕士字数下限
+  word_count_max: 150000
+
+school_rules:
+  tsinghua_master:
+    aigc_rate_max: 5
+    duplicate_rate_max: 5
+    require_blind_review: true     # 清华硕士盲审必做
+    require_word_submission: true
+    abstract_word_limits:
+      zh_chars_min: 500
+      zh_chars_max: 1000
+      en_words_min: 350
+      en_words_max: 600
+
+# 硕士毕设盲审身份信息（thesis-blind-review 必需）
+identity:
+  author_name: "张三"
+  author_id: "2026200xxx"
+  advisor_name: "李四教授"
+  school: "清华大学"
+  college: "电子工程系"
+  major: "信息与通信工程"
+  lab_keywords:
+    - "XX 实验室"
+    - "XXLab"
+  project_codes:
+    - "62xxxxxxx"                   # 国自然
+    - "2024YFBxxxxxxx"              # 重点研发
+
+pipeline:
+  paper_plan: true
+  paper_figure: true
+  paper_write: true
+  paper_compile: true
+  paper_review: true
+  aigc_reduce: true
+  improvement_rounds: 3             # 比本科多 1 轮
+  lit_review: true
+  novelty_check: false              # 毕设不强求
+
+integrations:
+  arxiv: true
+  semantic_scholar: true
+  research_lit: false
+  comm_lit_review: true             # 工科领域综述
+  claude_paper_study: true          # 精读相关工作
+  novelty_check: false
+  proof_writer: true                # 硕士理论章必做
+  formula_derivation: true
+  scientific_visualization: true
+  matplotlib_tvhahn: false
+  mermaid_diagram: true
+  paper_illustration: true
+  result_to_claim: true
+  ablation_planner: false
+  rebuttal: false
+  paper_reviewer: true
+  paper_slides: false               # 答辩用 thesis-defense-prep
+  paper_poster: false
+  docx: true                        # 学校必交 Word
+  pptx: false
+  pdf: false
+
+extensions:
+  latex_to_word: true
+  thesis_defense_prep: true         # 25-30 分钟答辩
+  thesis_blind_review: true         # ⭐ 硕士专属
+  bilingual_abstract: true
+  format_compliance_checker: true
+
+narrative:
+  report_path: ./NARRATIVE_REPORT.md
+  topic: ""
+  bilingual: true                   # 中英文摘要
+
+platform:
+  primary_ai: claude
+  auto_compile_targets:
+    - claude
+
+advanced:
+  scan_excludes:
+    - node_modules
+    - .git
+    - __pycache__
+    - .venv
+    - venv
+    - dist
+    - build
+    - .thesis-helper
+    - dataset
+    - checkpoints
+    - wandb
+  data_file_max_mb: 100
+  cnki_validation_required: true    # 硕士必做 CNKI 验证
+  thought_trace_per_chapter: 3      # 比本科多 1 处

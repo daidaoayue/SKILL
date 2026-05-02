@@ -1,0 +1,184 @@
+# ============================================================================
+# thesis-helper 项目配置模板
+# ----------------------------------------------------------------------------
+# 用法：把本文件复制到你的论文项目根目录，重命名为 thesis.config.yml，
+#       根据自己情况改字段。skill 启动时会自动读取。
+# ============================================================================
+
+# -------- 必填 --------
+thesis_type: undergrad-thesis        # 四选一：journal | conference | undergrad-thesis | master-thesis
+venue: 北航                            # 学校名 / 期刊名 / 会议名
+language: zh                          # zh 中文 / en 英文
+detector: CNKI                        # CNKI | Turnitin | PaperPass | VIPCS | none
+
+# -------- 项目路径（v0.3 修订·支持工程根 ≠ 论文根的真实场景） --------
+paths:
+  project_root: .                                          # 工程项目根（含数据/代码）
+  paper_root: ./paper                                      # ⭐ 论文真实工作目录（v0.3 新增）
+                                                           #   典型：./paper_writing/我的毕设/thesis_main
+  main_tex: main.tex                                       # ⭐ 主 LaTeX 文件（v0.3 新增）
+                                                           #   相对 paper_root；多版本时显式指定，如 main_aigc.tex
+  output_dir: ./paper                                      # 论文输出目录（默认同 paper_root）
+  format_rules: ./格式要求                                  # 格式要求文件夹（如有）
+  bib_file: ./references.bib                               # 参考文献文件（如有）
+
+  # 高级：分阶段输入覆盖（多 main.tex 场景用）
+  aigc_reduce_input: null                                  # 默认 paper_root/main.tex；可指定 main_v2.tex
+  latex_to_word_input: null                                # 默认 paper_root/main_aigc.tex；学校上传 Word 用降痕版
+
+# -------- AIGC / 查重阈值 --------
+targets:
+  aigc_rate_max: 8                    # CNKI AIGC 率上限 (%)
+  duplicate_rate_max: 8               # 查重率上限 (%)
+  word_count_min: 30000               # 字数下限（毕设常用 3 万）
+  word_count_max: 100000               # 字数上限
+  page_count_max: null                # 页数上限（期刊用，null 表示不限制）
+
+# -------- 学校 / 期刊规则 --------
+school_rules:
+  # 北航本科毕设示例
+  buaa_undergrad:
+    aigc_rate_max: 8                   # 北航 AIGC 红线
+    duplicate_rate_max: 8              # 北航查重红线
+    aigc_hidden_redline: true          # 北航 AIGC 隐红线（必降）
+    require_word_submission: true      # 北航必须上传 Word 版
+  # 清华硕士毕设示例
+  tsinghua_master:
+    duplicate_rate_max: 15
+    aigc_rate_max: 5
+  # IEEE 期刊示例
+  ieee_journal:
+    venue_code: IEEE_JOURNAL
+    skip_aigc_reduce: true             # 期刊一般不查 CNKI
+    page_count_max: 14
+    references_count_in_pages: true    # 参考文献计入页数
+  # NeurIPS 会议示例
+  neurips_conference:
+    venue_code: NeurIPS
+    page_count_max: 9                  # 主体 9 页 + 无限制 references/appendix
+    references_count_in_pages: false
+    auto_generate_slides: true         # 自动生成 paper-slides
+    auto_generate_poster: true         # 自动生成 paper-poster
+  # ICLR 会议示例
+  iclr_conference:
+    venue_code: ICLR
+    page_count_max: 10
+    references_count_in_pages: false
+
+# -------- Pipeline 阶段开关 --------
+pipeline:
+  paper_plan: true                    # 是否生成 PAPER_PLAN.md
+  paper_figure: true                  # 是否自动生图
+  paper_write: true                   # 是否生成 LaTeX
+  paper_compile: true                 # 是否编译 PDF
+  paper_review: true                  # 是否跑 paper_reviewer 自审
+  aigc_reduce: true                   # 是否跑 aigc-reduce（毕设流程默认 true）
+  improvement_rounds: 2               # 自动改进轮数
+  lit_review: true                    # 是否前置文献综述（research-lit / comm-lit-review）
+  novelty_check: false                # 是否前置 novelty-check（投稿前推荐 true）
+
+# -------- 集成 skill 接入开关（17 个现成 skill） --------
+integrations:
+  # 选题/调研
+  arxiv: true                         # arxiv 文献检索
+  semantic_scholar: true              # IEEE/ACM 已发表论文
+  research_lit: true                  # 通用文献综述
+  comm_lit_review: false              # 通信领域专用（雷达/无线请开）
+  claude_paper_study: false           # 深度精读外文论文
+  novelty_check: false                # 验证 idea 新颖性
+  # 理论
+  proof_writer: false                 # 数学证明（理论章用）
+  formula_derivation: false           # 公式推导
+  # 图表
+  scientific_visualization: true      # 期刊出版级绘图
+  matplotlib_tvhahn: false            # Tim Hahn 风格
+  mermaid_diagram: true               # 系统/流程图
+  paper_illustration: true            # AI 配图
+  # 实验对接
+  result_to_claim: false              # 实验结果→claim 映射
+  ablation_planner: false             # ablation 设计
+  # 投稿后
+  rebuttal: false                     # 审稿意见回复（投稿后开）
+  paper_reviewer: true                # 投稿前自审
+  # 答辩/海报
+  paper_slides: false                 # 答辩 PPT（毕设/会议自动开）
+  paper_poster: false                 # 学术海报（会议自动开）
+  # 交付格式
+  docx: true                          # Word 文档操作
+  pptx: false                         # PPT 操作
+  pdf: false                          # PDF 后处理
+
+# -------- 扩展 skill 开关（5 个新造 skill） --------
+extensions:
+  latex_to_word: true                 # LaTeX → Word（国内毕设必交 Word）
+  thesis_defense_prep: true           # 答辩 PPT + 答辩问答模拟
+  thesis_blind_review: false          # 盲审版（硕博毕设自动开）
+  bilingual_abstract: true            # 中英文摘要平行检查
+  format_compliance_checker: true     # 学校格式规范检查
+
+# -------- 论文叙事 --------
+narrative:
+  report_path: ./NARRATIVE_REPORT.md  # 叙事报告路径（如有，paper-writing 优先用）
+  topic: ""                           # 没有 NARRATIVE_REPORT.md 时填论文主题
+  bilingual: false                    # 是否中英双版（feedback_paper_narrative 提到）
+
+# -------- 跨平台 --------
+platform:
+  primary_ai: claude                  # claude | cursor | gemini | cline | chatgpt | other
+  auto_compile_targets:               # 编译时自动生成的平台配置
+    - claude
+    # - cursor                         # 生成 .cursorrules
+    # - gemini                         # 生成 GEMINI.md
+    # - cline                          # 生成 .clinerules
+    # - chatgpt                        # 生成 ChatGPT 自定义 GPTs instructions
+    # - universal                      # 生成通用 prompt 包（任意 AI 复制粘贴）
+
+# -------- 高级 --------
+advanced:
+  scan_excludes:                      # 扫描时跳过的目录
+    - node_modules
+    - .git
+    - __pycache__
+    - .venv
+    - venv
+    - dist
+    - build
+  data_file_max_mb: 100               # 单个数据文件大小上限（避免误扫大模型权重）
+  cnki_validation_required: true      # 毕设是否强制 CNKI 验证循环
+  thought_trace_per_chapter: 2        # aigc-reduce 思维痕迹注入每章最少处数
+
+# ============================================================================
+# 示例：硕士毕设最小化配置
+# ============================================================================
+# thesis_type: master-thesis
+# venue: 清华大学
+# language: zh
+# detector: CNKI
+# targets:
+#   aigc_rate_max: 5
+#   duplicate_rate_max: 5
+#
+# ============================================================================
+# 示例：IEEE 期刊最小化配置
+# ============================================================================
+# thesis_type: journal
+# venue: IEEE_JOURNAL
+# language: en
+# detector: none
+# narrative:
+#   report_path: ./NARRATIVE_REPORT.md
+# pipeline:
+#   aigc_reduce: false
+
+# ============================================================================
+# 示例：NeurIPS 会议最小化配置
+# ============================================================================
+# thesis_type: conference
+# venue: NeurIPS
+# language: en
+# detector: none
+# pipeline:
+#   aigc_reduce: false
+# integrations:
+#   paper_slides: true                # 自动生成答辩 PPT
+#   paper_poster: true                # 自动生成 A0 海报

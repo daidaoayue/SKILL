@@ -1,0 +1,14 @@
+# thesis-helper - 运行时产物，不入仓
+.thesis-helper/
+*.pyc
+__pycache__/
+.bilingual-check/
+.format-check/
+
+# Python virtual env
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/

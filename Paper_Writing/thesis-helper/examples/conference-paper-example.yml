@@ -1,0 +1,95 @@
+# ============================================================================
+# 示例配置：NeurIPS 会议投稿
+# ----------------------------------------------------------------------------
+# 用法：复制到论文项目根目录，重命名为 thesis.config.yml
+# ============================================================================
+
+thesis_type: conference
+venue: NeurIPS                       # ICLR / ICML / CVPR / ACL / AAAI / ...
+language: en
+detector: none
+
+paths:
+  project_root: .
+  output_dir: ./paper
+  format_rules: ./templates          # neurips2025.tex 等
+  bib_file: ./references.bib
+
+targets:
+  word_count_min: 3000
+  word_count_max: 9000
+  page_count_max: 9                  # NeurIPS 主体 9 页
+  references_count_in_pages: false   # references / appendix 不计
+
+school_rules:
+  neurips_conference:
+    venue_code: NeurIPS
+    page_count_max: 9
+    references_count_in_pages: false
+    auto_generate_slides: true       # 接收后必做
+    auto_generate_poster: true       # 接收后必做
+    figure_format: vector_pdf
+    cite_style: neurips
+
+pipeline:
+  paper_plan: true
+  paper_figure: true
+  paper_write: true
+  paper_compile: true
+  paper_review: true
+  aigc_reduce: false
+  improvement_rounds: 2
+  lit_review: true
+  novelty_check: true                # 会议第一指标
+
+integrations:
+  arxiv: true
+  semantic_scholar: true
+  research_lit: true
+  comm_lit_review: false
+  claude_paper_study: true
+  novelty_check: true                # 会议必查
+  proof_writer: false                # 看是否含理论
+  formula_derivation: true
+  scientific_visualization: true
+  matplotlib_tvhahn: true            # 美观度高
+  mermaid_diagram: true              # method 流程图
+  paper_illustration: true           # AI 配图（架构）
+  result_to_claim: true
+  ablation_planner: true             # 会议非常看 ablation
+  rebuttal: false                    # 投稿后开
+  paper_reviewer: true
+  paper_slides: true                 # 会议必做
+  paper_poster: true                 # 会议必做
+  docx: false
+  pptx: true                         # PPTX 备选
+  pdf: true                          # 投稿包后处理
+
+extensions:
+  latex_to_word: false
+  thesis_defense_prep: false         # 会议用 paper-slides
+  thesis_blind_review: false
+  bilingual_abstract: false
+  format_compliance_checker: false   # 会议 .sty 自带
+
+narrative:
+  report_path: ./NARRATIVE_REPORT.md
+  topic: ""
+  bilingual: false
+
+platform:
+  primary_ai: claude
+  auto_compile_targets:
+    - claude
+
+advanced:
+  scan_excludes:
+    - node_modules
+    - .git
+    - __pycache__
+    - .venv
+    - checkpoints
+    - dataset
+    - wandb
+  data_file_max_mb: 100
+  cnki_validation_required: false

@@ -1,0 +1,114 @@
+# ============================================================================
+# 示例配置：北航本科毕设（雷达目标识别方向）
+# ----------------------------------------------------------------------------
+# 用法：把本文件复制到你的论文项目根目录，重命名为 thesis.config.yml
+# 参考你的 memory：北航 8% 硬阈值 + AIGC 隐红线 + Word 上传规范
+# ============================================================================
+
+# -------- 必填 --------
+thesis_type: undergrad-thesis
+venue: 北航
+language: zh
+detector: CNKI
+
+# -------- 项目路径 --------
+paths:
+  project_root: .
+  output_dir: ./paper
+  format_rules: ./格式要求          # 北航毕设模板放这里
+  bib_file: ./references.bib
+
+# -------- 阈值（北航硬指标） --------
+targets:
+  aigc_rate_max: 8                 # 北航 AIGC 红线（实测 v3 2.8% 远低于此）
+  duplicate_rate_max: 8            # 北航查重红线
+  word_count_min: 30000            # 本科毕设字数下限
+  word_count_max: 80000
+
+# -------- 学校规则 --------
+school_rules:
+  buaa_undergrad:
+    aigc_rate_max: 8
+    duplicate_rate_max: 8
+    aigc_hidden_redline: true      # 北航 AIGC 隐红线（强制 aigc-reduce）
+    require_word_submission: true  # 北航必须上传 Word
+
+# -------- Pipeline 阶段开关 --------
+pipeline:
+  paper_plan: true
+  paper_figure: true
+  paper_write: true
+  paper_compile: true
+  paper_review: true
+  aigc_reduce: true                # 毕设强制
+  improvement_rounds: 2
+  lit_review: true                 # 雷达方向必做综述
+  novelty_check: false             # 毕设不强求
+
+# -------- 集成 skill 开关 --------
+integrations:
+  # 选题/调研
+  arxiv: true
+  semantic_scholar: true
+  research_lit: false
+  comm_lit_review: true            # 雷达方向走通信领域综述
+  claude_paper_study: false
+  novelty_check: false
+  # 理论
+  proof_writer: false              # 雷达毕设理论较少
+  formula_derivation: true         # 公式推导整理
+  # 图表
+  scientific_visualization: true
+  matplotlib_tvhahn: false
+  mermaid_diagram: true            # 系统架构图必备
+  paper_illustration: true
+  # 实验对接
+  result_to_claim: true            # 实验结果对应 claim
+  ablation_planner: false
+  # 投稿后
+  rebuttal: false                  # 毕设无审稿
+  paper_reviewer: true             # 自审
+  # 答辩/海报
+  paper_slides: false              # 用 thesis-defense-prep 替代
+  paper_poster: false
+  # 交付格式
+  docx: true                       # 北航必交 Word
+  pptx: false                      # 答辩 PPT 走 thesis-defense-prep
+  pdf: false
+
+# -------- 扩展 skill 开关（毕设全开） --------
+extensions:
+  latex_to_word: true              # 北航必交 Word，pandoc 不够用
+  thesis_defense_prep: true        # 答辩 PPT + 问答模拟
+  thesis_blind_review: false       # 本科毕设无盲审
+  bilingual_abstract: true         # 中英文摘要平行
+  format_compliance_checker: true  # 北航格式严格
+
+# -------- 论文叙事 --------
+narrative:
+  report_path: ./NARRATIVE_REPORT.md
+  topic: "基于多特征融合与门控机制的雷达目标识别"
+  bilingual: true                  # 北航需中英文摘要
+
+# -------- 跨平台 --------
+platform:
+  primary_ai: claude
+  auto_compile_targets:
+    - claude
+
+# -------- 高级 --------
+advanced:
+  scan_excludes:
+    - node_modules
+    - .git
+    - __pycache__
+    - .venv
+    - venv
+    - dist
+    - build
+    - .thesis-helper
+    - rknn_outputs              # 雷达项目特有：板上部署中间产物
+    - checkpoints               # 大模型权重
+  data_file_max_mb: 100
+  cnki_validation_required: true
+  thought_trace_per_chapter: 2
