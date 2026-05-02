@@ -157,12 +157,68 @@ def phase_abstract(abstract_tex: Path, thesis_type: str, output_dir: Path) -> di
     return run_subprocess(cmd, "Phase · bilingual-abstract", timeout=60)
 
 
+def phase_compile_pdf(main_tex: Path, output_dir: Path) -> dict:
+    """Phase: 真用 xelatex 编译最终交付 PDF（学校交毕设的标准格式）。"""
+    import shutil as _sh
+    if _sh.which("xelatex") is None:
+        return {"label": "Phase · compile-pdf (最终交付)", "success": False,
+                "error": "xelatex 未找到"}
+
+    print(f"\n{'─' * 70}")
+    print(f"▶ Phase · compile-pdf (⭐ 最终交付物 · 学校要的 PDF)")
+    print(f"  main.tex: {main_tex}")
+    print(f"{'─' * 70}")
+
+    # 跑 xelatex（如果 .pdf 已存在直接复制）
+    src_pdf = main_tex.with_suffix(".pdf")
+    final_pdf = output_dir / "thesis_FINAL.pdf"
+
+    if not src_pdf.exists():
+        try:
+            subprocess.run(["xelatex", "-interaction=nonstopmode",
+                          str(main_tex.name)], cwd=main_tex.parent,
+                          capture_output=True, timeout=300)
+            subprocess.run(["xelatex", "-interaction=nonstopmode",
+                          str(main_tex.name)], cwd=main_tex.parent,
+                          capture_output=True, timeout=300)
+        except Exception as e:
+            return {"label": "Phase · compile-pdf", "success": False,
+                    "error": f"xelatex 异常: {e}"}
+
+    if not src_pdf.exists():
+        return {"label": "Phase · compile-pdf", "success": False,
+                "error": "xelatex 没生成 PDF（请检查编译错误）"}
+
+    # 复制到输出目录
+    import shutil
+    shutil.copy2(src_pdf, final_pdf)
+
+    # 真数页数
+    try:
+        import pypdf
+        pdf_pages = len(pypdf.PdfReader(final_pdf).pages)
+        pdf_size = final_pdf.stat().st_size / 1024 / 1024
+        print(f"  ✅ PDF 已就绪: {final_pdf.name}")
+        print(f"     页数: {pdf_pages} 页 | 大小: {pdf_size:.1f} MB")
+        return {"label": "Phase · compile-pdf (最终交付)", "success": True,
+                "pdf_path": str(final_pdf), "pages": pdf_pages,
+                "size_mb": round(pdf_size, 2)}
+    except Exception as e:
+        return {"label": "Phase · compile-pdf", "success": True,
+                "pdf_path": str(final_pdf), "warn": f"页数读取失败: {e}"}
+
+
 def phase_word(main_tex: Path, output_dir: Path) -> dict:
-    """Phase: LaTeX 转 Word。"""
+    """Phase: LaTeX 转 Word（⚠️ CNKI 检查中间产物，非最终交付）。"""
+    # 改名：明确这是为 CNKI 检查而生的 docx，不是论文最终交付
+    docx_path = output_dir / "thesis_FOR_CNKI_CHECK.docx"
     cmd = [sys.executable, str(EXTENSIONS["word"]), str(main_tex),
-           "-o", str(output_dir / "thesis.docx"),
+           "-o", str(docx_path),
            "--report", str(output_dir / "convert_report.json")]
-    return run_subprocess(cmd, "Phase · latex-to-word", timeout=600)
+    print(f"\n{'─' * 70}")
+    print(f"▶ Phase · latex-to-word (⚠️ CNKI 检查中间产物，非最终交付)")
+    print(f"{'─' * 70}")
+    return run_subprocess(cmd, "Phase · latex-to-word (CNKI 检查中间产物)", timeout=600)
 
 
 def phase_defense(paper_root: Path, duration: int, output_dir: Path) -> dict:
@@ -273,7 +329,7 @@ def main() -> int:
     parser.add_argument("--config", type=Path, default=None,
                         help="thesis.config.yml 路径（默认在项目根找）")
     parser.add_argument("--phase",
-                        choices=["all", "scan", "format", "abstract", "word", "defense", "blind", "aigc"],
+                        choices=["all", "scan", "format", "abstract", "pdf", "word", "defense", "blind", "aigc"],
                         default="all", help="只跑某个阶段")
     parser.add_argument("--output", type=Path, default=None,
                         help="输出目录（默认 testskill/orchestrator_run）")
@@ -342,7 +398,11 @@ def main() -> int:
     if args.phase in ("all", "abstract") and abstract_tex:
         results.append(phase_abstract(abstract_tex, thesis_type, output_dir))
 
-    # Phase word（latex-to-word）
+    # Phase compile-pdf（⭐ 最终交付物 · 学校要的 PDF）
+    if args.phase in ("all", "pdf") and main_tex:
+        results.append(phase_compile_pdf(main_tex, output_dir))
+
+    # Phase word（latex-to-word，⚠️ CNKI 检查中间产物）
     if args.phase in ("all", "word") and main_tex:
         results.append(phase_word(main_tex, output_dir))
 
