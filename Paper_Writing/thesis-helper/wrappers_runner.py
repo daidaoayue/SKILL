@@ -202,6 +202,8 @@ def main() -> int:
     parser.add_argument("--all", action="store_true", help="真触发全部 21 个")
     parser.add_argument("--paper-root", type=Path, default=None, help="--all 模式下论文目录")
     parser.add_argument("--timeout", type=int, default=600, help="单 wrapper 超时秒")
+    parser.add_argument("--resume", action="store_true",
+                        help="--all 模式下，跳过已成功的 wrapper（输出 > 100 字节），只跑没成功的")
     args = parser.parse_args()
 
     if args.list:
@@ -244,8 +246,24 @@ def main() -> int:
             "pdf": str(main_pdf),
         }
         results = []
-        print(f"\n{'='*70}\n真触发全部 21 个 wrapper（用 claude -p 真调 LLM）\n{'='*70}")
+        skipped_resume = []
+        print(f"\n{'='*70}\n真触发全部 21 个 wrapper（用 claude -p 真调 LLM）"
+              f"{' [resume 模式]' if args.resume else ''}\n{'='*70}")
         for name in WRAPPER_CONFIGS:
+            # resume 模式：检查已有 output 是否真成功
+            if args.resume:
+                existing = output / f"{name}_output.md"
+                if existing.exists():
+                    size = existing.stat().st_size
+                    content = existing.read_text(encoding="utf-8", errors="replace")[:100]
+                    is_real_output = (size > 100 and "hit your limit" not in content
+                                      and "rate limit" not in content.lower())
+                    if is_real_output:
+                        print(f"  ⏭️  跳过 {name:30s}  (已成功 / {size} 字节)")
+                        results.append({"name": name, "success": True,
+                                        "skipped_resume": True, "output_chars": size})
+                        skipped_resume.append(name)
+                        continue
             results.append(run_one_wrapper(name, results_dict.get(name, topic),
                                            output, args.timeout))
         # 汇总
