@@ -6,6 +6,10 @@
 
 ### 📝 Paper_Writing（论文写作类）
 
+![thesis-helper 工作流架构图](Paper_Writing/thesis-helper/diagrams/thesis-helper-workflow.png)
+
+
+
 | Skill 包 | 入口 | 介绍 |
 |---------|------|------|
 | [`thesis-helper`](Paper_Writing/thesis-helper/) ⭐ | `/thesis-helper PATH` | **顶层一站式入口**（v0.6.3+）。本科/硕士/博士毕设、IEEE/Elsevier 期刊、ACM 会议——给项目目录就自动路由：扫资产 → 格式合规（含字数按学校母语单位 9 类规范）→ 中英摘要平行检查 → PDF/docx 双交付 → AIGC 7-stage 真改写（写到 _aigc 后缀，不动原文）→ 答辩 Q&A → 盲审版。底层调 `aigc-reduce-skills` + `PaperWriting` + 17 个 ARIS skill。**接到指令后第一时间钉死 TODO 流水线契约，禁止"我觉得不需要"地跳步骤** |

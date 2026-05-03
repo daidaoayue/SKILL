@@ -1,0 +1,53 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#FFD93D','primaryTextColor':'#222','primaryBorderColor':'#333','lineColor':'#444','fontSize':'14px'}}}%%
+flowchart TB
+    USER[/"👤 用户：/thesis-helper D:\my-research-project --type undergrad-thesis"/]:::user
+
+    subgraph L1["🚦 L1 · 入口契约（v0.6.4 不可裁剪）"]
+        direction LR
+        T1[钉死 TODO<br/>TodoWrite 列全步骤]:::contract
+        T2[禁止跳步<br/>仅 --skip 可跳]:::contract
+        T3[verification_report.md<br/>真数字闭环]:::contract
+    end
+
+    subgraph L2["⚙️ L2 · 主链路（orchestrator.py · 9 phase 真已 9/9 通）"]
+        P0[Phase 0<br/>📂 project-scanner<br/>读 config + 扫资产]:::scan
+        P1[Phase 1<br/>📐 format-checker<br/>8 项含字数·母语单位]:::check
+        P15[Phase 1.5<br/>🔤 bilingual-abstract<br/>中英摘要平行]:::check
+        P2[⭐ Phase 2<br/>📄 compile-pdf<br/>thesis_FINAL.pdf]:::deliv
+        P3[⭐ Phase 3<br/>📝 latex-to-word<br/>FOR_CNKI_CHECK.docx]:::deliv
+        P4[Phase 4<br/>🔍 aigc-detect<br/>7 章扫描]:::aigc
+        P5[Phase 5<br/>✏️ aigc-reduce 7-stage<br/>→ _aigc 后缀不动原文]:::aigc
+        P6[Phase 6<br/>🎤 thesis-defense-prep]:::pipe
+        P7[Phase 7 硕士必做<br/>👁️ thesis-blind-review]:::pipe
+        P8[⭐ Phase 8<br/>✅ verification_report.md]:::verify
+
+        P0 --> P1 --> P15 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8
+    end
+
+    subgraph L3["💬 L3 · 互动层（21 ARIS skill · 上游 100% 已装 ~/.claude/skills/）"]
+        direction LR
+        S1["📚 找文献<br/>research-lit / arxiv<br/>semantic-scholar"]:::skill
+        S2["💡 验新颖<br/>novelty-check<br/>claude-paper:study"]:::skill
+        S3["📐 写理论<br/>proof-writer<br/>formula-derivation"]:::skill
+        S4["🎨 出图表<br/>mermaid-diagram<br/>matplotlib-tvhahn<br/>paper-illustration"]:::skill
+        S5["🧪 设计实验<br/>ablation-planner<br/>result-to-claim"]:::skill
+        S6["📤 投稿后<br/>rebuttal · paper-reviewer<br/>paper-slides/poster"]:::skill
+    end
+
+    DELIV[["⭐ 最终交付物<br/>thesis_FINAL.pdf + thesis_FOR_CNKI_CHECK.docx<br/>+ AIGC 改写版 + 答辩 Q&A + verification_report.md"]]:::final
+
+    USER --> L1
+    L1 --> L2
+    L2 -.-> DELIV
+    L3 -.可对话调用.-> L2
+
+    classDef user fill:#FFD93D,stroke:#333,stroke-width:2px
+    classDef contract fill:#FF6B6B,color:#fff,stroke:#333,stroke-width:1.5px
+    classDef scan fill:#4ECDC4,stroke:#333
+    classDef check fill:#A8DADC,stroke:#333
+    classDef pipe fill:#95E1D3,stroke:#333
+    classDef aigc fill:#F7B731,stroke:#333
+    classDef deliv fill:#6C5CE7,color:#fff,stroke:#333,stroke-width:2px
+    classDef verify fill:#26DE81,color:#fff,stroke:#333,stroke-width:2px
+    classDef skill fill:#E8F4F8,stroke:#666
+    classDef final fill:#FFF9C4,stroke:#F57F17,stroke-width:2.5px
