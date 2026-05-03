@@ -42,6 +42,8 @@ SCHOOL_RULES = {
         "required_includes": ["abstract", "conclusion", "reference", "acknowledgement", "bachelor_info"],
         "linespread_min": 1.5,
         "page_geometry_required": True,
+        "word_count_min": 30000,
+        "word_count_max": 100000,
     },
     "buaa_master": {
         "name": "北航硕士毕设",
@@ -54,6 +56,8 @@ SCHOOL_RULES = {
         "min_chapters": 5,
         "required_includes": ["abstract", "conclusion", "reference", "acknowledgement"],
         "linespread_min": 1.5,
+        "word_count_min": 50000,
+        "word_count_max": 150000,
     },
     "tsinghua_undergrad": {
         "name": "清华本科毕设",
@@ -142,6 +146,52 @@ def check_chapters(tex: str, rules: dict) -> dict:
             "pass": len(chapters) >= min_n}
 
 
+def check_word_count(main_tex_path: Path, rules: dict) -> dict:
+    """统计所有 \\include 章节的中文+英文字数总和（剥离 LaTeX 命令）。"""
+    wmin = rules.get("word_count_min")
+    wmax = rules.get("word_count_max")
+    if not wmin:
+        return {"name": "word_count", "expected": "skipped", "actual": "n/a", "pass": True}
+
+    main_tex = main_tex_path.read_text(encoding="utf-8", errors="replace")
+    includes = re.findall(r"\\include\{([^}]+)\}", main_tex)
+    base = main_tex_path.parent
+    chapter_stats = []
+    total_zh = 0
+    total_en = 0
+    for inc in includes:
+        # 解析 path（可能带 data/ 前缀，可能没 .tex 后缀）
+        candidates = [base / f"{inc}.tex", base / inc, base / "data" / f"{Path(inc).name}.tex"]
+        path = next((p for p in candidates if p.exists()), None)
+        if not path:
+            chapter_stats.append({"file": inc, "status": "MISSING"})
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        # 剥离 LaTeX：注释 + 公式 + 命令
+        text = re.sub(r"%.*$", "", text, flags=re.MULTILINE)
+        text = re.sub(r"\$[^$]*\$", " ", text)
+        text = re.sub(r"\\[a-zA-Z]+\*?(\[[^\]]*\])?(\{[^{}]*\})?", " ", text)
+        text = re.sub(r"[{}\\]", " ", text)
+        zh = len(re.findall(r"[一-鿿]", text))
+        en = len(re.findall(r"\b[A-Za-z][A-Za-z\-]+\b", text))
+        chapter_stats.append({"file": inc, "zh": zh, "en": en})
+        total_zh += zh
+        total_en += en
+
+    total = total_zh + total_en
+    in_range = wmin <= total <= (wmax or 1_000_000)
+    return {
+        "name": "word_count",
+        "expected": f"{wmin:,} ~ {wmax or 'unlimited':,}".replace(",000,000", "M"),
+        "actual": f"{total:,} 字 (中 {total_zh:,} + 英 {total_en:,})",
+        "pass": in_range,
+        "chapter_breakdown": chapter_stats,
+        "total_zh": total_zh,
+        "total_en": total_en,
+        "total": total,
+    }
+
+
 def check_required_includes(tex: str, rules: dict) -> dict:
     """检查必有的 \\include 段（abstract/conclusion/...）。"""
     required = rules.get("required_includes", [])
@@ -193,6 +243,7 @@ def run_checks(main_tex: Path, school: str, cls_path: Path | None) -> dict:
         check_encoding(tex, rules),
         check_chapters(tex, rules),
         check_required_includes(tex, rules),
+        check_word_count(main_tex, rules),
     ]
 
     cls_info = check_cls_metadata(cls_path)
