@@ -6,7 +6,9 @@
 
 ### 📝 Paper_Writing（论文写作类）
 
-![thesis-helper 工作流架构图](Paper_Writing/thesis-helper/diagrams/thesis-helper-workflow.png)
+![thesis-helper 工作流架构图](Paper_Writing/thesis-helper/diagrams/variant-E-clean.png)
+
+> 推荐风格 Variant E（干净三层 pipeline 图）。其他 4 种风格（古典海报 / Vercel dashboard / 学术 paper figure / 中国学术系统架构）见 [`Paper_Writing/thesis-helper/diagrams/`](Paper_Writing/thesis-helper/diagrams/)。
 
 
 
