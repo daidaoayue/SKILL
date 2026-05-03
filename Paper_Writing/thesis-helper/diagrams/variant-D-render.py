@@ -227,29 +227,29 @@ branch_specs = [
 
 step_w  = 28
 step_h  = 8
-step_ys = [62, 51, 40]   # 三个 step 的下沿 y
-branch_top = 72
-branch_bot = 35
+step_ys = [58, 47, 36]   # 三个 step 下沿 y
+branch_top = 70          # 标题带顶部 y=70 → 上沿 75，与"系统架构"标签 (y=78)、注释带 (y=78) 留 3 单位安全间距
+branch_bot = 31
 
 for cx, fc, ec, zh, en, steps in branch_specs:
-    # 分支顶部彩色标题条
+    # 分支顶部彩色标题条 (实色填充 + 白字，最高对比度)
     title_bar = FancyBboxPatch(
-        (cx - step_w/2 - 1, branch_top - 3.2),
-        step_w + 2, 4.6,
+        (cx - step_w/2 - 1, branch_top),
+        step_w + 2, 5.0,
         boxstyle="round,pad=0.1,rounding_size=0.5",
-        linewidth=1.2, edgecolor=ec, facecolor=fc, zorder=3)
+        linewidth=1.4, edgecolor=ec, facecolor=ec, zorder=3)
     ax.add_patch(title_bar)
-    ax.text(cx, branch_top - 0.9, zh,
+    ax.text(cx, branch_top + 2.5, zh,
             ha='center', va='center',
-            fontsize=11, fontweight='bold',
-            color=ec, family='SimHei', zorder=4)
+            fontsize=11.5, fontweight='bold',
+            color='white', family='SimHei', zorder=4)
 
-    # 三个 step 矩形
+    # 三个 step 矩形 (文字用 #1a1a1a 深色，最高可读性)
     for sy, st in zip(step_ys, steps):
         soft_box(cx - step_w/2, sy, step_w, step_h,
                  st,
                  fc=fc, ec=ec,
-                 fz=10.5, fw='bold', color=ec,
+                 fz=10.5, fw='bold', color='#1a1a1a',
                  family='SimHei', linespacing=1.2, z=4)
 
     # step 之间垂直箭头
@@ -263,13 +263,13 @@ for cx, fc, ec, zh, en, steps in branch_specs:
 
     # 顶部标题条 -> 第一个 step
     ax.add_patch(FancyArrowPatch(
-        (cx, branch_top - 3.2 + 0), (cx, step_ys[0] + step_h),
+        (cx, branch_top), (cx, step_ys[0] + step_h),
         arrowstyle='-|>', mutation_scale=14,
         color=ec, linewidth=1.5, zorder=3))
 
 # ---------- 3.3 输入源 -> 各分支顶部 (Manhattan 走线，统一干线 + 三分支) ----------
 input_right_x = input_x + input_w
-trunk_y = 75.5  # 输入与分支顶之间的水平干线高度
+trunk_y = 77.5  # 输入与分支顶之间的水平干线高度（在 title 顶 y=75 之上 2 单位）
 trunk_x_start = input_right_x + 0.3
 trunk_x_end = branch_specs[-1][0] + 0.5  # 干线右端到最右分支
 # 输入块右侧 → 干线起点(短水平段)
@@ -436,16 +436,21 @@ ax.text(150, note_y,
 # 5. 右下角性能指标
 # =====================================================================
 metric_box = FancyBboxPatch(
-    (138, 6.2), 58, 5.0,
+    (132, 5.5), 64, 6.5,
     boxstyle="round,pad=0.15,rounding_size=0.5",
-    linewidth=1.2, edgecolor=NAVY,
-    facecolor='#eef3fa', zorder=5)
+    linewidth=1.4, edgecolor=NAVY,
+    facecolor=NAVY, zorder=5)
 ax.add_patch(metric_box)
-ax.text(167, 8.7,
-        '关键指标 · 9/9 phase 真接通  ·  21/21 ARIS skill 已就位  ·  v0.6.6 (2026-05-03)',
+ax.text(164, 9.8,
+        '关键指标  Key Metrics',
         ha='center', va='center',
-        fontsize=9, fontweight='bold',
-        color=NAVY_DARK, family='SimHei', zorder=6)
+        fontsize=8.5, fontstyle='italic',
+        color='#a8c0e0', family='Times New Roman', zorder=6)
+ax.text(164, 7.3,
+        '9/9 phase 真接通 · 21/21 ARIS skill 已就位 · v0.6.8',
+        ha='center', va='center',
+        fontsize=9.5, fontweight='bold',
+        color='white', family='SimHei', zorder=6)
 
 # =====================================================================
 # 6. 顶部 -> 底部架构 衔接 (移除穿过架构区的虚线，避免压块)
