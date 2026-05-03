@@ -1,6 +1,18 @@
-# thesis-helper · 工作流图三种风格选项
+# thesis-helper · 工作流图四种风格选项
 
-> v0.6.5 用 canvas-design / frontend-design / matplotlib 三个 skill 并行渲染了 3 张架构图，按汇报场景挑选。
+> v0.6.7 用 canvas-design / frontend-design / matplotlib × 2 并行渲染了 4 张架构图，按汇报场景挑选。
+
+## 🅳 Variant D · 中国学术系统架构图风（推荐 · 给老师汇报最对路）
+
+![D](variant-D-academic-cn.png)
+
+- **风格**：国家基金/毕业论文章节扉页常见的"系统架构图"范式
+- **配色**：深海军蓝 #1f3a5f（研究内容三联块）+ pastel 蓝/紫/绿三色分支 + 橙色门控融合头 + 粉色 4 交付物
+- **结构**：顶部三块"研究内容一/二/三" + 大白箭头 → 底部输入源 → 三色平行分支 → 门控融合 → 4 个最终交付物
+- **加分**：dashed callout 注解框（v0.6.4 契约 + AIGC 闭环）+ 右下角性能指标条
+- **适合**：本科/硕士毕设答辩、国基金申请、组会汇报、给中国老师看
+- **文件**：`variant-D-academic-cn.png` (555 KB · 3436×2246 · 220 DPI)
+
 
 ## 🅰️ Variant A · 海报版（古典杂志/制图年鉴风）
 
