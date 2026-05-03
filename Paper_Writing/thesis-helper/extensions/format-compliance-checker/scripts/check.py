@@ -42,8 +42,10 @@ SCHOOL_RULES = {
         "required_includes": ["abstract", "conclusion", "reference", "acknowledgement", "bachelor_info"],
         "linespread_min": 1.5,
         "page_geometry_required": True,
+        # 北航本科规范："正文不少于 3 万字"——指中文字符
         "word_count_min": 30000,
         "word_count_max": 100000,
+        "word_count_unit": "zh_chars",
     },
     "buaa_master": {
         "name": "北航硕士毕设",
@@ -56,8 +58,10 @@ SCHOOL_RULES = {
         "min_chapters": 5,
         "required_includes": ["abstract", "conclusion", "reference", "acknowledgement"],
         "linespread_min": 1.5,
+        # 北航硕士规范："正文不少于 5 万字"
         "word_count_min": 50000,
         "word_count_max": 150000,
+        "word_count_unit": "zh_chars",
     },
     "tsinghua_undergrad": {
         "name": "清华本科毕设",
@@ -68,6 +72,7 @@ SCHOOL_RULES = {
         "min_chapters": 5,
         "word_count_min": 30000,
         "word_count_max": 100000,
+        "word_count_unit": "zh_chars",
     },
     "tsinghua_master": {
         "name": "清华硕士毕设",
@@ -78,6 +83,7 @@ SCHOOL_RULES = {
         "min_chapters": 5,
         "word_count_min": 50000,
         "word_count_max": 150000,
+        "word_count_unit": "zh_chars",
     },
     "phd-thesis": {
         "name": "博士学位论文（通用）",
@@ -87,6 +93,7 @@ SCHOOL_RULES = {
         "min_chapters": 6,
         "word_count_min": 80000,
         "word_count_max": 200000,
+        "word_count_unit": "zh_chars",
     },
     "journal-ieee": {
         "name": "IEEE 期刊（英文）",
@@ -94,8 +101,10 @@ SCHOOL_RULES = {
         "bib_package": None,
         "cite_style": None,
         "min_chapters": 4,
+        # IEEE 期刊：4000-12000 英文单词
         "word_count_min": 4000,
         "word_count_max": 12000,
+        "word_count_unit": "en_words",
     },
     "journal-elsevier": {
         "name": "Elsevier 期刊（英文）",
@@ -105,6 +114,7 @@ SCHOOL_RULES = {
         "min_chapters": 4,
         "word_count_min": 5000,
         "word_count_max": 15000,
+        "word_count_unit": "en_words",
     },
     "conference-acm": {
         "name": "ACM 会议（英文）",
@@ -114,6 +124,7 @@ SCHOOL_RULES = {
         "min_chapters": 4,
         "word_count_min": 3000,
         "word_count_max": 9000,
+        "word_count_unit": "en_words",
     },
     "generic": {
         "name": "通用 GB/T 7713-2006",
@@ -121,8 +132,10 @@ SCHOOL_RULES = {
         "bib_package": None,
         "cite_style": None,
         "min_chapters": 4,
+        # 通用模式：自动按文档主语言判定（中文文档比中文字符，英文文档比英文单词）
         "word_count_min": 5000,
         "word_count_max": 100000,
+        "word_count_unit": "auto",
     },
 }
 
@@ -289,18 +302,34 @@ def check_word_count(main_tex_path: Path, rules: dict) -> dict:
         total_zh += zh
         total_en += en
 
-    total = total_zh + total_en
-    in_range = wmin <= total <= (wmax or 10_000_000)
+    # 选用计量单位（按学校规范的母语判定）
+    unit = rules.get("word_count_unit", "zh_chars")
+    if unit == "auto":
+        # 自动模式：哪个多按哪个比（中文 0.6 等价 1 个英文词的信息密度）
+        unit = "zh_chars" if total_zh > total_en * 1.6 else "en_words"
+
+    if unit == "zh_chars":
+        measured = total_zh
+        unit_label = "中文字符"
+    elif unit == "en_words":
+        measured = total_en
+        unit_label = "英文单词"
+    else:
+        measured = total_zh + total_en
+        unit_label = "混合 (中+英)"
+
+    in_range = wmin <= measured <= (wmax or 10_000_000)
     return {
         "name": "word_count",
-        "expected": f"{wmin:,}-{wmax:,}" if wmax else f">={wmin:,}",
-        "actual": f"{total:,} (中 {total_zh:,} + 英 {total_en:,})",
+        "expected": f"{wmin:,}-{wmax:,} {unit_label}" if wmax else f">={wmin:,} {unit_label}",
+        "actual": f"{measured:,} {unit_label} (中 {total_zh:,} + 英 {total_en:,})",
         "pass": in_range,
         "chapter_breakdown": chapter_stats,
         "total_zh_chars": total_zh,
         "total_en_words": total_en,
-        "total": total,
-        "method": "strip_latex_markup_then_count",
+        "measured": measured,
+        "unit": unit,
+        "method": "strip_latex_markup_then_count_by_unit",
     }
 
 
