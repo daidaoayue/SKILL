@@ -39,6 +39,61 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Skill, Agent
 /thesis-helper D:\my-research-project --type master-thesis --detector CNKI
 ```
 
+## 🚦 不可裁剪契约（接 /thesis-helper 第一时间必做）
+
+**这是硬约束，不是建议。** 之前真实事故：agent 接到 `/thesis-helper` 后凭"我觉得不需要"
+跳过流水线步骤，导致字数检查、格式合规、AIGC 扫描全漏，3.25 警告事故复盘后落本约束。
+
+### 第 0 步 · TODO 钉死（先列再做）
+
+接到 `/thesis-helper PATH` 第一秒，**必须** 用 TodoWrite 工具把当前论文类型对应的 pipeline
+**全步骤** 写成 TODO 列表，一字不漏。颗粒度参考：
+
+```
+本科毕设 pipeline → TODO 9 项（不可裁剪）：
+  □ Phase 0-A   读 thesis.config.yml / 交互式生成
+  □ Phase 0-B   project-scanner 扫资产
+  □ Phase 1     format-compliance-checker（含 word_count 按学校母语单位）
+  □ Phase 1.5   bilingual-abstract 中英摘要平行检查
+  □ Phase 2     compile-pdf 主交付物（PDF）
+  □ Phase 3     latex-to-word CNKI 检查中间产物（docx）
+  □ Phase 4     aigc-reduce-detect 7 章扫描
+  □ Phase 5     aigc-reduce 7-stage 真改写（写到 _aigc 后缀，不动原文）
+  □ Phase 6     thesis-defense-prep 答辩 Q&A
+  □ Phase 7     thesis-blind-review 匿名版（硕士必做）
+  □ Phase 8     验证报告 + 三红线闭环
+```
+
+**对应 pipeline 文件（不要凭记忆，去读真值）：**
+- `pipelines/undergrad-thesis-pipeline.md`
+- `pipelines/master-thesis-pipeline.md`
+- `pipelines/journal-pipeline.md`
+- `pipelines/conference-pipeline.md`
+
+### 第 1 步 · 逐项打钩（不允许跳）
+
+**禁止行为**（踩了 = 3.25 警告）：
+- ❌ "字数已经够了，跳过 word_count check"——必须真跑 checker 出数字
+- ❌ "格式应该没问题，跳过 format-compliance-checker"——必须跑出 8 项报告
+- ❌ "AIGC 应该不高，跳过扫描"——必须真跑 detect_aigc 出 7 章数字
+- ❌ "本科不用做盲审，跳过 thesis-blind-review"——硕士必做，本科可跳但要明确标注
+- ❌ "用户已经手动跑过，跳过 X"——除非用户**显式说**"X 已做无需重跑"，否则照跑
+
+**唯一允许跳过的两种情况**（必须明文声明）：
+1. 用户显式 opt-out：`/thesis-helper PATH --skip aigc-detect,blind-review`
+2. 论文类型 pipeline 本身不含该步（如期刊论文不需要 thesis-blind-review）
+
+跳了任何一项，必须在最终验证报告里 **大字标注** 哪步被跳 + 为什么。
+
+### 第 2 步 · 报告闭环
+
+完成所有非跳过步骤后，必须输出 `verification_report.md` 包含：
+- 每个 TODO 项的状态（✅ 完成 / ⏭️ 用户主动跳 / ❌ 失败 + 原因）
+- 每项的真实输出文件路径 + 字节数
+- 字数 / AIGC率 / 查重率 / 页数 真实数字（自嗨式"已完成"无效）
+
+---
+
 ## Phase 0 · 项目自动扫描（必做）
 
 接到指令后**立即静默执行**，不向用户提问任何已有信息：
