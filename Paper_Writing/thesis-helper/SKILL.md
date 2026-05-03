@@ -39,10 +39,11 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Skill, Agent
 /thesis-helper D:\my-research-project --type master-thesis --detector CNKI
 ```
 
-## 🚦 不可裁剪契约（接 /thesis-helper 第一时间必做）
+## 🚦 完整流程清单（接 /thesis-helper 第一时间必做）
 
-**这是硬约束，不是建议。** 之前真实事故：agent 接到 `/thesis-helper` 后凭"我觉得不需要"
-跳过流水线步骤，导致字数检查、格式合规、AIGC 扫描全漏，3.25 警告事故复盘后落本约束。
+**这是硬约束，不是建议。** 接到 `/thesis-helper` 后必须按对应论文类型的 pipeline 把
+所有步骤完整跑一遍，**不允许 agent 凭"我觉得这步不需要"自行跳过**。之前真实事故：
+agent 漏跑字数检查、格式合规、AIGC 扫描，导致问题没被发现。
 
 ### 第 0 步 · TODO 钉死（先列再做）
 

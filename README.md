@@ -1,16 +1,12 @@
 # SKILL — Claude Code 技能集合
 
-> daidaoayue 维护的 Claude Code skill 大仓库，按使用场景分类组织。所有 skill 均可直接放入 `~/.claude/skills/` 目录加载使用。
+> 带刀阿越 维护的 Claude Code skill 大仓库，按使用场景分类组织。所有 skill 均可直接放入 `~/.claude/skills/` 目录加载使用。
 
 ## 📂 当前收纳
 
 ### 📝 Paper_Writing（论文写作类）
 
 ![thesis-helper 工作流架构图](Paper_Writing/thesis-helper/diagrams/variant-E-clean.png)
-
-> 推荐风格 Variant E（干净三层 pipeline 图）。其他 4 种风格（古典海报 / Vercel dashboard / 学术 paper figure / 中国学术系统架构）见 [`Paper_Writing/thesis-helper/diagrams/`](Paper_Writing/thesis-helper/diagrams/)。
-
-
 
 | Skill 包 | 入口 | 介绍 |
 |---------|------|------|
@@ -20,13 +16,14 @@
 
 > 推荐入口顺序：**真懒 → `/thesis-helper`（一句话起飞）；想精控某段 → 直接调 `/paper-writing` 或 `/aigc降低`**。
 
-#### 🚦 thesis-helper · 不可裁剪契约（v0.6.3 新增）
+#### 🚦 thesis-helper · 完整流程清单（接到指令逐项跑完，禁止跳步）
 
 接到 `/thesis-helper PATH` 第一时间，agent **必须** 用 TodoWrite 工具把对应论文类型的
-pipeline 全步骤写成 TODO 列表，逐项打钩。**禁止跳步**——之前真实事故：agent 凭"我觉得
-不需要"漏跑 word_count、format-check、AIGC 扫描，复盘后落本契约。完整规则见
+pipeline 全步骤写成 TODO 列表，逐项打钩。**不允许凭"我觉得这步不需要"自行省略**——
+之前真实事故：agent 漏跑 word_count、format-check、AIGC 扫描，导致字数不达标和格式
+不合规没被发现。完整流程清单详见
 [`Paper_Writing/thesis-helper/SKILL.md`](Paper_Writing/thesis-helper/SKILL.md) 的
-"🚦 不可裁剪契约" 章节。
+"🚦 完整流程清单" 章节。
 
 #### 📊 字数门槛 · 9 类论文规范母语单位（v0.6.3）
 

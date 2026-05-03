@@ -23,7 +23,7 @@
 
 ## 🚀 安装（30 秒）
 
-> 本 skill 包位于 `daidaoayue/SKILL` 大仓库的 `Paper_Writing/aigc-reduce-skills/` 子目录下，下面三种方式任选其一。
+> 本 skill 包位于 带刀阿越 维护的 [`SKILL`](https://github.com/daidaoayue/SKILL) 大仓库的 `Paper_Writing/aigc-reduce-skills/` 子目录下（GitHub 用户名 `daidaoayue`），下面三种方式任选其一。
 
 ### 方式一：完整 clone（最简单）
 

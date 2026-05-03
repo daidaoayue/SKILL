@@ -219,7 +219,7 @@ MIT — 随便用，造福学生群体。
 
 ## 关联仓库
 
-- 上游：[daidaoayue/SKILL](https://github.com/daidaoayue/SKILL)
+- 上游：[带刀阿越/SKILL](https://github.com/daidaoayue/SKILL)（GitHub 用户名 `daidaoayue`）
 - 同级：
   - [`../PaperWriting/`](../PaperWriting/) — paper-writing 9 个 skill
   - [`../aigc-reduce-skills/`](../aigc-reduce-skills/) — aigc-reduce 8 个 skill + CNKI 实战经验
