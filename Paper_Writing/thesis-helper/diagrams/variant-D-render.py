@@ -267,19 +267,27 @@ for cx, fc, ec, zh, en, steps in branch_specs:
         arrowstyle='-|>', mutation_scale=14,
         color=ec, linewidth=1.5, zorder=3))
 
-# ---------- 3.3 输入源 -> 各分支顶部 ----------
+# ---------- 3.3 输入源 -> 各分支顶部 (Manhattan 走线，统一干线 + 三分支) ----------
 input_right_x = input_x + input_w
+trunk_y = 75.5  # 输入与分支顶之间的水平干线高度
+trunk_x_start = input_right_x + 0.3
+trunk_x_end = branch_specs[-1][0] + 0.5  # 干线右端到最右分支
+# 输入块右侧 → 干线起点(短水平段)
+ax.add_line(Line2D([trunk_x_start, trunk_x_start + 2.5], [65, 65],
+                   color='#404040', linewidth=1.3, zorder=2))
+# 上提到 trunk_y
+ax.add_line(Line2D([trunk_x_start + 2.5, trunk_x_start + 2.5], [65, trunk_y],
+                   color='#404040', linewidth=1.3, zorder=2))
+# 主干水平线
+ax.add_line(Line2D([trunk_x_start + 2.5, trunk_x_end], [trunk_y, trunk_y],
+                   color='#404040', linewidth=1.3, zorder=2))
+# 三个分支垂直下落 + 箭头
 for cx, _, ec, *_ in branch_specs:
-    target_x = cx - step_w/2 - 1
-    target_y = branch_top - 0.9
-    # 从输入块右侧引出, 拐弯到分支顶部
     ax.add_patch(FancyArrowPatch(
-        (input_right_x + 0.3, 65),
-        (target_x - 0.3, target_y),
+        (cx, trunk_y), (cx, branch_top + 1.5),
         arrowstyle='-|>', mutation_scale=13,
         color='#404040', linewidth=1.3,
-        connectionstyle="arc3,rad=0.0",
-        zorder=2))
+        connectionstyle="arc3,rad=0.0", zorder=2))
 
 # ---------- 3.4 右侧门控融合头 (橙) ----------
 gate_x = 165
@@ -318,15 +326,30 @@ for i, ln in enumerate(gate_lines):
             color='white', family='SimHei' if i > 0 else 'Times New Roman',
             zorder=5)
 
-# 三分支末端 -> 门控融合头
+# 三分支末端 -> 门控融合头 (Manhattan: 各分支末端右出 → 共同下沉到 gate_left → 进 gate)
+gate_left_x = gate_x  # 门控左边沿
+# 每个分支右出，水平到 conv_x（门控左边沿前的汇聚点），再垂直对齐进入门控
+conv_x = gate_left_x - 4
+# 为避免三条横线重叠，使用 staggered Y 出口
+exit_offsets = {62: -1.5, 100: 0, 138: 1.5}  # 蓝下/紫中/绿上 进入 gate 的 Y 偏移
 for cx, _, ec, *_ in branch_specs:
+    branch_right_x = cx + step_w/2
+    # 末 step 中点 Y
+    src_y = step_ys[-1] + step_h/2
+    # 进入门控的 Y 位置（中心 ± offset）
+    target_y = gate_y + gate_h/2 + exit_offsets[cx]
+    # 横向到 conv_x
+    ax.add_line(Line2D([branch_right_x + 0.3, conv_x], [src_y, src_y],
+                       color=ec, linewidth=1.5, zorder=3))
+    # 垂直到 target_y
+    ax.add_line(Line2D([conv_x, conv_x], [src_y, target_y],
+                       color=ec, linewidth=1.5, zorder=3))
+    # 横向带箭头进入 gate
     ax.add_patch(FancyArrowPatch(
-        (cx + step_w/2, step_ys[-1] + step_h/2),
-        (gate_x, gate_y + gate_h/2 + (cx - 100) * 0.15),
+        (conv_x, target_y), (gate_left_x - 0.2, target_y),
         arrowstyle='-|>', mutation_scale=13,
         color=ec, linewidth=1.5,
-        connectionstyle="arc3,rad=-0.05",
-        zorder=3))
+        connectionstyle="arc3,rad=0", zorder=3))
 
 # ---------- 3.5 最终输出 (4 个粉/红块, 横排底部) ----------
 out_y = 13
@@ -369,61 +392,45 @@ for x, t, s in zip(out_xs, out_titles, out_subs):
             fontsize=8.5, color='#5b1a14',
             family='SimHei', zorder=5)
 
-# 门控融合头 -> 最终输出 (汇聚式 4 条)
+# 门控融合头 -> 最终输出 (Manhattan 总线式: gate 下沉 → 横向干线 → 4 条垂直分支)
 gate_bottom_x = gate_x + gate_w/2
 gate_bottom_y = gate_y
-for x in out_xs:
-    target_x = x + out_w/2
-    target_y = out_y + out_h
+output_top_y = out_y + out_h
+bus_y = (gate_bottom_y + output_top_y) / 2 + 1  # 主总线水平位置（在 gate 下、输出上）
+
+# Step 1: gate 中心向下到总线
+ax.add_line(Line2D([gate_bottom_x, gate_bottom_x], [gate_bottom_y - 0.3, bus_y],
+                   color=ORANGE_DARK, linewidth=1.4, zorder=2))
+# Step 2: 总线水平段（覆盖最左到最右输出中心）
+out_centers = [x + out_w/2 for x in out_xs]
+bus_x_min = min(min(out_centers), gate_bottom_x)
+bus_x_max = max(max(out_centers), gate_bottom_x)
+ax.add_line(Line2D([bus_x_min, bus_x_max], [bus_y, bus_y],
+                   color=ORANGE_DARK, linewidth=1.4, zorder=2))
+# Step 3: 4 条垂直分支带箭头到各输出顶部
+for cx_out in out_centers:
     ax.add_patch(FancyArrowPatch(
-        (gate_bottom_x, gate_bottom_y),
-        (target_x, target_y + 0.2),
+        (cx_out, bus_y), (cx_out, output_top_y + 0.2),
         arrowstyle='-|>', mutation_scale=12,
         color=ORANGE_DARK, linewidth=1.3,
-        connectionstyle="arc3,rad=0.15",
-        zorder=2))
+        connectionstyle="arc3,rad=0", zorder=2))
 
 # =====================================================================
 # 4. callout 虚线注解框
 # =====================================================================
-# callout #1: PDF/docx 分支 (中间紫色) 注解
-callout1 = FancyBboxPatch(
-    (50, 23.0), 28, 5.5,
-    boxstyle="round,pad=0.15,rounding_size=0.6",
-    linewidth=1.4, edgecolor=CALLOUT_EDGE,
-    facecolor='#fff8fc', linestyle='--', zorder=5)
-ax.add_patch(callout1)
-ax.text(64, 25.7,
-        'v0.6.4 不可裁剪契约\nTodoWrite 钉全步骤 · 禁跳步',
+# 注解策略 v2：去掉浮动 callout 框 + 引线（避免压块 + 走线乱）
+# 改成在底部架构区上方放一道 hairline 注释带，文字平铺，零引线
+note_y = 78
+ax.text(64, note_y,
+        '◆ v0.6.4 不可裁剪契约：TodoWrite 钉全步骤·禁跳步',
         ha='center', va='center',
-        fontsize=8.8, fontweight='bold',
-        color=CALLOUT_EDGE, family='SimHei',
-        linespacing=1.25, zorder=6)
-# 引线: callout -> PDF 分支底部
-ax.add_patch(FancyArrowPatch(
-    (78, 28.5), (100, 38),
-    arrowstyle='-', mutation_scale=10,
-    color=CALLOUT_EDGE, linewidth=1.2,
-    linestyle='--', zorder=5))
-
-# callout #2: AIGC 分支 (右绿) 注解
-callout2 = FancyBboxPatch(
-    (135, 26.5), 30, 5.5,
-    boxstyle="round,pad=0.15,rounding_size=0.6",
-    linewidth=1.4, edgecolor=GREEN_DARK,
-    facecolor='#f6fff5', linestyle='--', zorder=5)
-ax.add_patch(callout2)
-ax.text(150, 29.2,
-        '写到 _aigc 后缀,不动原文\nowner 闭环 · 可回滚',
+        fontsize=9, fontweight='bold',
+        color=CALLOUT_EDGE, family='SimHei', zorder=2)
+ax.text(150, note_y,
+        '◆ AIGC 写 _aigc 后缀·不动原文·owner 闭环可回滚',
         ha='center', va='center',
-        fontsize=8.8, fontweight='bold',
-        color=GREEN_DARK, family='SimHei',
-        linespacing=1.25, zorder=6)
-ax.add_patch(FancyArrowPatch(
-    (138, 32), (138, 38),
-    arrowstyle='-', mutation_scale=10,
-    color=GREEN_DARK, linewidth=1.2,
-    linestyle='--', zorder=5))
+        fontsize=9, fontweight='bold',
+        color=GREEN_DARK, family='SimHei', zorder=2)
 
 # =====================================================================
 # 5. 右下角性能指标
@@ -441,14 +448,10 @@ ax.text(167, 8.7,
         color=NAVY_DARK, family='SimHei', zorder=6)
 
 # =====================================================================
-# 6. 顶部 -> 底部架构 衔接 (可选: 三个研究内容块的箭头落在底部架构上沿)
+# 6. 顶部 -> 底部架构 衔接 (移除穿过架构区的虚线，避免压块)
 # =====================================================================
-# 把研究内容三块的"白箭头出口"再用一根细线引到底部架构区, 表示落地
-arch_top_y = 81
-for cx in research_centers:
-    ax.add_line(Line2D([cx, cx], [82.8, arch_top_y + 0.2],
-                       color=NAVY, linewidth=0.8,
-                       linestyle=(0, (4, 3)), zorder=1))
+# 旧版用 dashed 线把研究内容连到底部架构上沿，但线穿过 input/branch 区造成压字
+# v2 改：只在底部架构区上方画一道 hairline 横线作"层界"，不再穿入
 
 # =====================================================================
 # 7. 左下角图例 / 来源
