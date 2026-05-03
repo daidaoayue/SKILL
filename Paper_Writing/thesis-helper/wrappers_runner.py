@@ -171,8 +171,10 @@ def run_one_wrapper(name: str, input_value: str, output_dir: Path,
         # PYTHONIOENCODING=utf-8 防 emoji 崩
         import os as _os
         env = {**_os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+        # --bare：跳过 hook + plugin + auto-memory + CLAUDE.md，防 SessionStart hook
+        # 注入 PUA banner 把 wrapper 任务当 leader 派单（v0.6.0 修复）
         r = subprocess.run(
-            [cli, "-p", full_prompt, "--model", "haiku"],
+            [cli, "-p", "--bare", full_prompt, "--model", "haiku"],
             capture_output=True, text=True, timeout=timeout_sec,
             encoding="utf-8", errors="replace", env=env,
         )
