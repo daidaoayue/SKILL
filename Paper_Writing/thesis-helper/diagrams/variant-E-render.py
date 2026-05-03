@@ -72,9 +72,9 @@ FANOUT_COLOR = '#7eb87e'
 FANIN_COLOR  = '#7eb87e'
 
 # ---------- canvas ----------
-fig, ax = plt.subplots(figsize=(16, 13), dpi=220)
+fig, ax = plt.subplots(figsize=(16, 10.5), dpi=220)
 ax.set_xlim(0, 160)
-ax.set_ylim(0, 130)
+ax.set_ylim(28, 130)  # 下界 28 → 裁掉原 KPI 卡区 (0-23)
 ax.set_aspect('equal')
 ax.axis('off')
 fig.patch.set_facecolor(BG)
@@ -502,15 +502,15 @@ for cy, spec in zip(left_card_cy, left_specs):
     render_icon(spec['icon'], ax, icon_cx, icon_cy, s=2.0,
                 color=spec['txt'])
     # title (right of icon, top line)
-    ax.text(left_card_cx + 3.5, cy + 3.2,
+    ax.text(left_card_cx + 3.5, cy + 3.5,
             spec['title'], ha='center', va='center',
-            fontsize=11.2, fontweight='bold', color=spec['txt'], zorder=3)
+            fontsize=13.0, fontweight='bold', color=spec['txt'], zorder=3)
     ax.text(left_card_cx + 3.5, cy - 0.3,
             spec['sub'], ha='center', va='center',
-            fontsize=9.0, color=TXT_DARK, zorder=3)
+            fontsize=10.5, color=TXT_DARK, zorder=3)
     ax.text(left_card_cx + 3.5, cy - 4.2,
             spec['tail'], ha='center', va='center',
-            fontsize=7.8, color=TXT_GREY, fontstyle='italic', zorder=3)
+            fontsize=8.8, color=TXT_GREY, fontstyle='italic', zorder=3)
 
 # arrows between left cards
 for i in range(2):
@@ -577,19 +577,19 @@ def card_row(ax, x0, w_total, y_center, n, card_h, specs):
         render_icon(spec['icon'], ax, icon_cx, icon_cy, s=1.7,
                     color=spec['txt'])
         # title
-        ax.text(cx + 3.0, y_center + 3.0,
+        ax.text(cx + 3.0, y_center + 3.2,
                 spec['title'], ha='center', va='center',
-                fontsize=10.5, fontweight='bold', color=spec['txt'],
+                fontsize=12.5, fontweight='bold', color=spec['txt'],
                 zorder=4)
         # cn sub
-        ax.text(cx + 3.0, y_center - 0.1,
+        ax.text(cx + 3.0, y_center - 0.2,
                 spec['sub'], ha='center', va='center',
-                fontsize=8.6, color=TXT_DARK, zorder=4)
+                fontsize=10.0, color=TXT_DARK, zorder=4)
         # tail
         if spec.get('tail'):
-            ax.text(cx + 3.0, y_center - 3.6,
+            ax.text(cx + 3.0, y_center - 3.8,
                     spec['tail'], ha='center', va='center',
-                    fontsize=7.6, color=TXT_GREY, fontstyle='italic',
+                    fontsize=8.6, color=TXT_GREY, fontstyle='italic',
                     zorder=4)
         centers.append((cx, card_w))
     return centers
@@ -736,49 +736,10 @@ for i in range(2):
 
 
 # =============================================================
-# 3. BOTTOM KPI cards
+# 3. BOTTOM KPI cards — REMOVED per user request (v0.6.11)
+#    用户反馈：底部 3 张 KPI 卡可裁，主体两栏 panel 已自带版本号
+#    保留 ylim 不变，下方留白由 bbox_inches='tight' 自动裁掉
 # =============================================================
-KPI_Y0 = 4
-KPI_H  = 19
-KPI_TOTAL_W = 150
-KPI_X0 = 5
-KPI_GAP = 4
-KPI_W = (KPI_TOTAL_W - 2 * KPI_GAP) / 3
-
-kpis = [
-    dict(icon='clock',
-         title='End-to-End Phase', value='9 / 9',
-         note='真接通 · 全 phase 钉死'),
-    dict(icon='lightning',
-         title='ARIS Skill Registry', value='21 / 21',
-         note='已就位 · skill+tool 全可控'),
-    dict(icon='target',
-         title='Pipeline Version', value='v 0.6.9',
-         note='不可裁剪契约 · 可回滚'),
-]
-
-for i, k in enumerate(kpis):
-    x = KPI_X0 + i * (KPI_W + KPI_GAP)
-    cx = x + KPI_W / 2
-    cy = KPI_Y0 + KPI_H / 2
-    card(ax, cx, cy, KPI_W, KPI_H, KPI_FILL, KPI_EDGE,
-         lw=1.4, zorder=2, rounding=1.6)
-    # icon left (drawn primitive)
-    icon_cx = x + 8.0
-    icon_cy = cy
-    render_icon(k['icon'], ax, icon_cx, icon_cy, s=3.0, color=TXT_DARK)
-    # title
-    ax.text(x + 16, cy + 4.6,
-            k['title'], ha='left', va='center',
-            fontsize=11.2, fontweight='bold', color=TXT_DARK, zorder=4)
-    # value
-    ax.text(x + 16, cy + 0.0,
-            k['value'], ha='left', va='center',
-            fontsize=17, fontweight='bold', color=TXT_DARK, zorder=4)
-    # note
-    ax.text(x + 16, cy - 4.8,
-            k['note'], ha='left', va='center',
-            fontsize=8.8, fontstyle='italic', color=TXT_GREY, zorder=4)
 
 
 # =============================================================
