@@ -1,8 +1,18 @@
-# thesis-helper · 工作流图四种风格选项
+# thesis-helper · 工作流图五种风格选项
 
-> v0.6.7 用 canvas-design / frontend-design / matplotlib × 2 并行渲染了 4 张架构图，按汇报场景挑选。
+> v0.6.10 用 canvas-design / frontend-design / matplotlib × 3 并行渲染了 5 张架构图，按汇报场景挑选。
 
-## 🅳 Variant D · 中国学术系统架构图风（推荐 · 给老师汇报最对路）
+## 🅴 Variant E · 干净三层 pipeline 图（推荐 · 当前最佳）
+
+![E](variant-E-clean.png)
+
+- **风格**：现代企业架构图（参考用户提供的 reference 设计）
+- **配色**：严格 3 色编码 —— 🟧 I/O 橙 + 🔵 CPU 蓝 + 🟢 Skill 绿（语义化区分）
+- **结构**：左 panel "Project Offline Setup" + 右 panel "On-board Runtime"（3 dashed 子层）+ 底部 3 张 KPI 卡
+- **加分**：所有图标用 matplotlib primitives 自绘（不依赖字体 glyph，零方块），命名严谨（Pipeline Aggregator 不再误用"门控融合"）
+- **文件**：`variant-E-clean.png` (1.1 MB · 6614×5413 · 520 DPI)
+
+## 🅳 Variant D · 中国学术系统架构图风
 
 ![D](variant-D-academic-cn.png)
 
