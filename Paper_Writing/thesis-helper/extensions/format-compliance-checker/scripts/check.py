@@ -66,6 +66,54 @@ SCHOOL_RULES = {
         "bib_package": "gbt7714",
         "cite_style": "numerical",
         "min_chapters": 5,
+        "word_count_min": 30000,
+        "word_count_max": 100000,
+    },
+    "tsinghua_master": {
+        "name": "清华硕士毕设",
+        "documentclass": "thuthesis",
+        "documentclass_options": ["master"],
+        "bib_package": "gbt7714",
+        "cite_style": "numerical",
+        "min_chapters": 5,
+        "word_count_min": 50000,
+        "word_count_max": 150000,
+    },
+    "phd-thesis": {
+        "name": "博士学位论文（通用）",
+        "documentclass": None,
+        "bib_package": "gbt7714",
+        "cite_style": "numerical",
+        "min_chapters": 6,
+        "word_count_min": 80000,
+        "word_count_max": 200000,
+    },
+    "journal-ieee": {
+        "name": "IEEE 期刊（英文）",
+        "documentclass": "IEEEtran",
+        "bib_package": None,
+        "cite_style": None,
+        "min_chapters": 4,
+        "word_count_min": 4000,
+        "word_count_max": 12000,
+    },
+    "journal-elsevier": {
+        "name": "Elsevier 期刊（英文）",
+        "documentclass": "elsarticle",
+        "bib_package": None,
+        "cite_style": None,
+        "min_chapters": 4,
+        "word_count_min": 5000,
+        "word_count_max": 15000,
+    },
+    "conference-acm": {
+        "name": "ACM 会议（英文）",
+        "documentclass": "acmart",
+        "bib_package": None,
+        "cite_style": None,
+        "min_chapters": 4,
+        "word_count_min": 3000,
+        "word_count_max": 9000,
     },
     "generic": {
         "name": "通用 GB/T 7713-2006",
@@ -73,6 +121,8 @@ SCHOOL_RULES = {
         "bib_package": None,
         "cite_style": None,
         "min_chapters": 4,
+        "word_count_min": 5000,
+        "word_count_max": 100000,
     },
 }
 
@@ -146,8 +196,74 @@ def check_chapters(tex: str, rules: dict) -> dict:
             "pass": len(chapters) >= min_n}
 
 
+def _strip_latex_for_wordcount(text: str) -> str:
+    """剥离 LaTeX 标记，保留正文可见文字。
+
+    规则：
+      1. 删注释（% 到行尾）
+      2. 删数学环境（$...$ / $$...$$ / equation / align / gather）
+      3. 删纯标记命令（含其大括号实参）：cite/label/ref/includegraphics/usepackage/
+         bibliography/input/include/setlength/vspace 等不产生正文文字
+      4. 删表格/图环境的标记壳，但保留 caption 实参（caption 内是真实可见文字）
+      5. 对其他命令（section/textbf/emph/...），删命令名+可选参数 [...]，
+         保留大括号内的实参文字（这些是用户写的真实正文）
+      6. 删剩余 \\、{、} 字符
+    """
+    # 1. 注释
+    text = re.sub(r"(?<!\\)%.*$", "", text, flags=re.MULTILINE)
+    # 2. 数学环境
+    text = re.sub(r"\$\$[^$]*\$\$", " ", text)
+    text = re.sub(r"(?<!\\)\$[^$]+\$", " ", text)
+    text = re.sub(r"\\begin\{(equation|align|gather|multline|eqnarray|displaymath)\*?\}.*?"
+                  r"\\end\{\1\*?\}", " ", text, flags=re.DOTALL)
+    # 3. 纯标记命令（连同其 {} 实参一起删）—— 这些命令的实参是 key/路径/数字，不是正文
+    markup_cmds = [
+        "cite", "citep", "citet", "citeauthor", "citeyear", "nocite",
+        "label", "ref", "eqref", "pageref", "autoref", "cref",
+        "includegraphics", "graphicspath",
+        "usepackage", "documentclass", "RequirePackage", "PassOptionsToPackage",
+        "input", "include", "subfile",
+        "bibliography", "bibliographystyle", "addbibresource",
+        "setlength", "addtolength", "setcounter", "addtocounter",
+        "newcommand", "renewcommand", "newenvironment", "renewenvironment",
+        "DeclareMathOperator", "newtheorem",
+        "vspace", "hspace", "rule", "phantom", "hphantom", "vphantom",
+        "centering", "raggedright", "raggedleft",
+        "newpage", "clearpage", "cleardoublepage", "pagebreak", "linebreak",
+        "noindent", "indent", "par", "smallskip", "medskip", "bigskip",
+        "hline", "cline", "toprule", "midrule", "bottomrule",
+        "color", "textcolor", "rowcolor", "columncolor",
+        "definecolor", "renewcolor",
+        "fontsize", "selectfont", "fontfamily", "fontseries", "fontshape",
+        "begin", "end",
+    ]
+    for cmd in markup_cmds:
+        # 命令 + 可选 [opt] + 必选 {arg}
+        text = re.sub(rf"\\{cmd}\*?(\[[^\]]*\])?\{{[^{{}}]*\}}", " ", text)
+        # 命令无大括号（如 \centering、\hline）
+        text = re.sub(rf"\\{cmd}\b\*?", " ", text)
+    # 4. \begin{tabular}{ccc} 这类带格式参数的环境壳
+    text = re.sub(r"\\begin\{[a-zA-Z*]+\}(\[[^\]]*\])?(\{[^{}]*\})*", " ", text)
+    text = re.sub(r"\\end\{[a-zA-Z*]+\}", " ", text)
+    # 5. 其他命令：去命令名 + [opt]，保留 {arg} 内的文字
+    #    匹配 \command[opt] 但不吃掉后面的 {}
+    text = re.sub(r"\\[a-zA-Z]+\*?(\[[^\]]*\])?", " ", text)
+    text = re.sub(r"\\[^a-zA-Z]", " ", text)  # \\\\, \%, \&, \$ 等转义符
+    # 6. 剩余的 { } | & ~ ^ _ 这类 LaTeX 排版字符
+    text = re.sub(r"[{}|&~^_\\]", " ", text)
+    # 多余空白合并
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
 def check_word_count(main_tex_path: Path, rules: dict) -> dict:
-    """统计所有 \\include 章节的中文+英文字数总和（剥离 LaTeX 命令）。"""
+    """统计所有 \\include 章节的真实正文字数（中文字符 + 英文单词），剥离 LaTeX 标记。
+
+    设计原则：
+      - 只算"用户能在 PDF 里看到的"中文字 + 英文词
+      - 不算 LaTeX 命令名、引用 key、包名、文件路径、bibitem ID
+      - 不算公式内符号（公式按"1 个公式 ≈ 0 字"处理）
+    """
     wmin = rules.get("word_count_min")
     wmax = rules.get("word_count_max")
     if not wmin:
@@ -160,35 +276,31 @@ def check_word_count(main_tex_path: Path, rules: dict) -> dict:
     total_zh = 0
     total_en = 0
     for inc in includes:
-        # 解析 path（可能带 data/ 前缀，可能没 .tex 后缀）
         candidates = [base / f"{inc}.tex", base / inc, base / "data" / f"{Path(inc).name}.tex"]
         path = next((p for p in candidates if p.exists()), None)
         if not path:
             chapter_stats.append({"file": inc, "status": "MISSING"})
             continue
-        text = path.read_text(encoding="utf-8", errors="replace")
-        # 剥离 LaTeX：注释 + 公式 + 命令
-        text = re.sub(r"%.*$", "", text, flags=re.MULTILINE)
-        text = re.sub(r"\$[^$]*\$", " ", text)
-        text = re.sub(r"\\[a-zA-Z]+\*?(\[[^\]]*\])?(\{[^{}]*\})?", " ", text)
-        text = re.sub(r"[{}\\]", " ", text)
-        zh = len(re.findall(r"[一-鿿]", text))
-        en = len(re.findall(r"\b[A-Za-z][A-Za-z\-]+\b", text))
-        chapter_stats.append({"file": inc, "zh": zh, "en": en})
+        raw = path.read_text(encoding="utf-8", errors="replace")
+        clean = _strip_latex_for_wordcount(raw)
+        zh = len(re.findall(r"[一-鿿]", clean))
+        en = len(re.findall(r"\b[A-Za-z][A-Za-z\-']+\b", clean))
+        chapter_stats.append({"file": inc, "zh_chars": zh, "en_words": en, "subtotal": zh + en})
         total_zh += zh
         total_en += en
 
     total = total_zh + total_en
-    in_range = wmin <= total <= (wmax or 1_000_000)
+    in_range = wmin <= total <= (wmax or 10_000_000)
     return {
         "name": "word_count",
-        "expected": f"{wmin:,} ~ {wmax or 'unlimited':,}".replace(",000,000", "M"),
-        "actual": f"{total:,} 字 (中 {total_zh:,} + 英 {total_en:,})",
+        "expected": f"{wmin:,}-{wmax:,}" if wmax else f">={wmin:,}",
+        "actual": f"{total:,} (中 {total_zh:,} + 英 {total_en:,})",
         "pass": in_range,
         "chapter_breakdown": chapter_stats,
-        "total_zh": total_zh,
-        "total_en": total_en,
+        "total_zh_chars": total_zh,
+        "total_en_words": total_en,
         "total": total,
+        "method": "strip_latex_markup_then_count",
     }
 
 
