@@ -29,7 +29,10 @@
 | `aigc-reduce-skills` | `/aigc降低` | 7 段流水线降 AIGC + 模型驱动 |
 | `PaperWriting` | `/paper-writing` 等 | 论文写作 9 skill 集合 |
 
-**详情** → [Paper_Writing/README.md](Paper_Writing/) （含完整流程清单 / 9 类字数门槛规范 / 安装命令 / 推荐组合）
+**🌐 跨 AI 适配**：thesis-helper 用 `compilers/build.py` 一份真源编译到 6 个目标平台 ——
+**Claude Code** / **Cursor** (`.cursorrules`) / **Gemini CLI** (`GEMINI.md`) / **Cline** (`.clinerules`) / **ChatGPT** / **Universal**（任意 AI 复制粘贴的通用 prompt 包）。不是 Claude 独占，跨工具链可用。
+
+**详情** → [Paper_Writing/README.md](Paper_Writing/) （含完整流程清单 / 9 类字数门槛规范 / 安装命令 / 跨 AI 编译 / 推荐组合）
 
 ---
 

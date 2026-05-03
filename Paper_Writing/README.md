@@ -94,6 +94,59 @@ cp -r ~/SKILL/Paper_Writing/PaperWriting/paper_reviewer ~/.claude/skills/
 
 ---
 
+## 🌐 跨 AI 适配（thesis-helper 一份真源 → 6 个目标平台）
+
+`thesis-helper` 在仓库里维护**单一真源**（`SKILL.md` + 子目录），用 `compilers/build.py`
+一键编译到 6 个 AI 工具的对应入口格式。**不依赖 Claude，跨平台都能跑**。
+
+### 6 个支持平台
+
+| 目标平台 | 输出格式 | 入口位置 | Compiler |
+|---------|---------|---------|----------|
+| **Claude Code** | 整个 skill 目录 | `~/.claude/skills/thesis-helper/` | `targets/claude.py` |
+| **Cursor** | `.cursorrules` 单文件 | 项目根目录 `.cursorrules` | `targets/cursor.py` |
+| **Gemini CLI** | `GEMINI.md` | 项目根目录 `GEMINI.md` | `targets/gemini.py` |
+| **Cline (VSCode)** | `.clinerules` | 项目根目录 `.clinerules` | `targets/cline.py` |
+| **ChatGPT** | 通用 prompt 包（可粘贴）| 复制到对话框 | `targets/chatgpt.py` |
+| **Universal** | 通用 prompt 包（任意 AI）| 复制到对话框 | `targets/universal.py` |
+
+### 用法
+
+```bash
+cd thesis-helper
+
+# 编译到所有平台
+python compilers/build.py --all --output ./dist
+
+# 单平台
+python compilers/build.py --target claude   --output ~/.claude/skills/thesis-helper/
+python compilers/build.py --target cursor   --output ./my-thesis-project/.cursorrules
+python compilers/build.py --target gemini   --output ./my-thesis-project/GEMINI.md
+python compilers/build.py --target cline    --output ./my-thesis-project/.clinerules
+python compilers/build.py --target chatgpt  --output ./dist/chatgpt-prompt.md
+python compilers/build.py --target universal --output ./dist/universal-prompt.md
+```
+
+### 设计理念
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│  thesis-helper/SKILL.md  + 子目录（单一真源）                           │
+│       │                                                                │
+│       │  compilers/build.py                                            │
+│       ▼                                                                │
+│  ┌──────┬──────┬──────┬──────┬──────────┬──────────┐                 │
+│  │claude│cursor│gemini│cline │ chatgpt  │universal │                  │
+│  └──────┴──────┴──────┴──────┴──────────┴──────────┘                 │
+│                                                                        │
+│  改 SKILL.md 一处 → build 一遍 → 6 个平台同步更新                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+> 你换 IDE / 换 AI 工具不用重写一遍 prompt，仓库里维护一份，编译多个目标。
+
+---
+
 ## 🔗 推荐组合用法
 
 ### 一句话起飞（推荐）
