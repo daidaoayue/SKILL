@@ -1,0 +1,25 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "daidaoayue-skills",
+  "description": "带刀阿越 维护的 Claude Code skill 集合 — Paper_Writing 论文写作 + weekly_report 周报生成",
+  "owner": {
+    "name": "daidaoayue",
+    "email": "levanduong0523@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "weekly-report",
+      "version": "1.0.0",
+      "description": "PhD weekly report writer — scans project, diffs vs last week, asks L3 questionnaire, outputs PhD-format markdown + PDF report",
+      "author": {
+        "name": "daidaoayue",
+        "email": "levanduong0523@gmail.com"
+      },
+      "category": "productivity",
+      "source": "./weekly_report",
+      "skills": [
+        "./skills/weekly-report-writer"
+      ]
+    }
+  ]
+}
