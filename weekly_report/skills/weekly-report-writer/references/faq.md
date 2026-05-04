@@ -13,7 +13,7 @@ Skill 每次跑都会问 `active_window_days`，默认 7 天但可以输入 1-30
 ## 工程目录里有几十 GB 的训练数据，会不会卡？
 
 不会。Scanner 对 `*.mat / *.npy / *.pt / *.pth / *.ckpt` 默认 metadata-only，
-不读内容、不算 sha1。71315 个数据文件实测扫描 < 30 秒。
+不读内容、不算 sha1。万级数据文件可在数十秒内出 manifest，工程越大越能体现 ThreadPool 的并发收益。
 
 ## 我改了 `metric_vocab.json` 里的 direction，要重跑 init 吗？
 
@@ -27,13 +27,13 @@ Skill 每次跑都会问 `active_window_days`，默认 7 天但可以输入 1-30
 3. 看 `metric_vocab.json`——是否有指标被错分到 config。
 4. 看 `interview.md`——是否漏填了关键问题。
 
-## 我的工程不是这个"PhD 雷达项目"格式，能用吗？
+## 我的工程是别的领域 / 别的命名风格，能用吗？
 
 可以。`project.toml` 里的 `buckets.*.roots` 全部由你自己配。
 init 模式会基于子目录名自动猜，你审一遍即可。
-默认覆盖了：`Forecasting/`, `output/`, `paper_writing/`, `research-wiki/` 等常见命名。
+内置的 bucket 候选根名覆盖了多种常见 PhD 工程命名（如 `src/ Forecasting/ output/ results/ paper_writing/ docs/ research-wiki/` 等）。
 
-## 我有多个项目（雷达 + 论文 + 别的），会不会串？
+## 我有多个项目并行，会不会串？
 
 每个项目独立 `.weekly_report/`，metric_vocab、history、family_aliases 全部
 per-project。汇总文件在 `D:\code\reports\<year>\<month>\` 按 short_name 区分。

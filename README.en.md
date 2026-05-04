@@ -57,11 +57,11 @@
 | ⭐ `weekly-report` | `/weekly-report init <project>` then `/weekly-report run` | PhD weekly-report automation: scan project → identify version-chain advancement → aggregate multi-seed metrics → extract formula blocks → L3 questionnaire → output PhD-format Markdown + PDF |
 
 **🔥 Core capabilities**:
-- 🔒 Red line: **never modifies user's project code** (writes only to `.weekly_report/` and aggregate dir)
-- 🔍 ThreadPool concurrent scanning, 71315 data files in < 30s
-- 📈 Multi-seed aggregation (mean ± std + 95% CI), auto-detects v25→v26 version-chain advancement
-- 📐 Extracts `$$ / \( \) / equation` formula blocks, recognizes both `## H2` and `\section{}` heading styles
-- 📄 PDF: pandoc + xelatex, SimSun body + SimHei headings, academic style
+- 🔒 Red line: **never modifies user's project code** (writes only to `<project>/.weekly_report/` and aggregate dir)
+- 🔍 ThreadPool concurrent scanner — large repos produce a manifest in seconds
+- 📈 Cross-seed metric aggregation (mean ± std); auto-detects version-chain advancement within a family (e.g. `train_v3.py → train_v4.py`)
+- 📐 Extracts formula blocks from `.md` / `.tex` (supports `$$`, `\(\)`, `\begin{equation}`), preserving the parent section
+- 📄 PDF rendering: pandoc + xelatex, academic style (Chinese serif body + sans-serif headings)
 
 **Details** → [weekly_report/README.md](weekly_report/) (install · config · multi-project isolation · troubleshooting)
 

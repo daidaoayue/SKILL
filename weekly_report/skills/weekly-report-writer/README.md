@@ -19,10 +19,10 @@ and figures faster than you can remember. By Friday, you're staring at
 50 file changes asking "what did I actually do this week?".
 
 This skill answers that for you. It scans your project directory, compares
-to last week's snapshot, identifies advanced version chains (e.g. v25→v26),
-extracts metric changes (mean ± std across seeds), surfaces new equations
-in your theory notes, and asks you only what it cannot infer. Then it
-writes a structured advisor-ready weekly report.
+to last week's snapshot, identifies advanced version chains (e.g. `xxx_v3.py
+→ xxx_v4.py`), extracts metric changes (mean ± std across seeds), surfaces
+new equations in your theory notes, and asks you only what it cannot infer.
+Then it writes a structured advisor-ready weekly report.
 
 ## What it produces
 

@@ -57,11 +57,11 @@
 | ⭐ `weekly-report` | `/weekly-report init <project>` 然后 `/weekly-report run` | 博士生周报全自动：扫工程 → 识别版本链推进 → 跨 seed 聚合指标 → 抽公式块 → L3 质询 → 出 PhD 风格 Markdown + PDF 周报 |
 
 **🔥 核心能力**：
-- 🔒 红线：永不修改用户工程代码（仅写 `.weekly_report/` 与聚合目录）
-- 🔍 ThreadPool 并发扫描，71315 数据文件 < 30s
-- 📈 多 seed 聚合 mean ± std + 95% CI，自动抓 v25→v26 版本链推进
-- 📐 抽 `$$ / \( \) / equation` 公式块，识别 `## H2` 与 `\section{}` 双格式
-- 📄 PDF：pandoc + xelatex，宋体正文 + 黑体标题，学术风格
+- 🔒 红线：永不修改用户工程代码（仅写 `<project>/.weekly_report/` 与聚合目录）
+- 🔍 ThreadPool 并发扫描，大型工程秒级出 manifest
+- 📈 跨 seed 聚合实验指标（mean ± std）；自动识别 family 内版本演进（如 `train_v3.py → train_v4.py`）
+- 📐 从 `.md` / `.tex` 抽公式块（支持 `$$`, `\(\)`, `\begin{equation}` 三种），保留所属章节
+- 📄 PDF 渲染：pandoc + xelatex，宋体正文 + 黑体标题，学术风格
 
 **详情** → [weekly_report/README.md](weekly_report/) （含安装方式 / 配置说明 / 多项目隔离 / 故障排除）
 
