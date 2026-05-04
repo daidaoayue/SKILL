@@ -1,9 +1,16 @@
-# Weekly Report Writer
+<div align="center">
 
-> A Claude Code skill for PhD students: scans your project, diffs vs last
-> week, asks you a short L3 questionnaire, and writes the advisor weekly report.
->
-> 中文版：[README.zh-CN.md](README.zh-CN.md)
+# 📊 Weekly Report Writer
+
+**A Claude Code skill for PhD students** · scan project → diff vs last week → write advisor-ready report
+
+🇨🇳 [简体中文](README.zh-CN.md) · 🇺🇸 **English**
+
+![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Version](https://img.shields.io/badge/version-v1.0-green.svg) ![Tests](https://img.shields.io/badge/tests-132%20passed-brightgreen.svg) ![Output](https://img.shields.io/badge/output-Markdown%20%2B%20PDF-orange.svg)
+
+</div>
+
+---
 
 ## Why use this
 

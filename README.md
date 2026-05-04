@@ -1,6 +1,18 @@
-# SKILL — Claude Code 技能集合
+<div align="center">
 
-> 带刀阿越 维护的 Claude Code skill 大仓库。按使用场景分类组织，所有 skill 均可放入 `~/.claude/skills/` 目录加载使用。
+# 🛠️ SKILL
+
+**带刀阿越 维护的 Claude Code 技能集合**
+
+🇨🇳 **简体中文** · 🇺🇸 [English](README.en.md)
+
+![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Skills](https://img.shields.io/badge/skills-26%2B-green.svg) ![Categories](https://img.shields.io/badge/categories-2%20published-blue.svg)
+
+</div>
+
+---
+
+> Claude Code skill 大仓库。按使用场景分类组织，所有 skill 均可装入 `~/.claude/skills/` 或通过 marketplace 安装。
 
 ---
 
@@ -9,9 +21,9 @@
 | 分类 | 状态 | 当前 | 详情 |
 |------|------|------|------|
 | 📝 [Paper_Writing](Paper_Writing/) · 论文写作 | ✅ 已发布 | **3 包 / 25+ skills** · thesis-helper / aigc-reduce-skills / PaperWriting | [→ 详情](Paper_Writing/) |
+| ⚡ [weekly_report](weekly_report/) · 周报生成 | ✅ 已发布 | **1 包 / 1 skill** · PhD 周报全自动 | [→ 详情](weekly_report/) |
 | 💻 Coding · 编程辅助 | ⏳ 规划中 | – | – |
 | 🔬 Research · 科研工具 | ⏳ 规划中 | – | – |
-| ⚡ Productivity · 效率工具 | ⏳ 规划中 | – | – |
 
 > 想推动某个分类提前发布？开 [Issue](https://github.com/daidaoayue/SKILL/issues) 投票或贡献 PR。
 
@@ -36,6 +48,25 @@
 
 ---
 
+## ⚡ weekly_report · PhD 周报生成器
+
+> ✅ 已发布 · 1 个 skill 包 · 扫工程 → 对比上周 → 自动写周报
+
+| Skill 包 | 入口 | 一句话 |
+|---------|------|--------|
+| ⭐ `weekly-report` | `/weekly-report init <project>` 然后 `/weekly-report run` | 博士生周报全自动：扫工程 → 识别版本链推进 → 跨 seed 聚合指标 → 抽公式块 → L3 质询 → 出 PhD 风格 Markdown + PDF 周报 |
+
+**🔥 核心能力**：
+- 🔒 红线：永不修改用户工程代码（仅写 `.weekly_report/` 与聚合目录）
+- 🔍 ThreadPool 并发扫描，71315 数据文件 < 30s
+- 📈 多 seed 聚合 mean ± std + 95% CI，自动抓 v25→v26 版本链推进
+- 📐 抽 `$$ / \( \) / equation` 公式块，识别 `## H2` 与 `\section{}` 双格式
+- 📄 PDF：pandoc + xelatex，宋体正文 + 黑体标题，学术风格
+
+**详情** → [weekly_report/README.md](weekly_report/) （含安装方式 / 配置说明 / 多项目隔离 / 故障排除）
+
+---
+
 ## 💻 Coding · 编程辅助
 
 > ⏳ 规划中 · 尚未收纳具体 skill
@@ -51,16 +82,6 @@
 > ⏳ 规划中 · 尚未收纳具体 skill
 
 **计划方向**：文献管理（zotero/obsidian 桥接）/ idea 验证 / 实验调度 / 复现性检查 / 数据集管理 / 实验日志
-
-> 欢迎 Issue 提需求 或 贡献 skill 包。
-
----
-
-## ⚡ Productivity · 效率工具
-
-> ⏳ 规划中 · 尚未收纳具体 skill
-
-**计划方向**：日程管理 / 邮件起草 / 笔记同步 / 信息检索 / 翻译辅助 / 会议纪要
 
 > 欢迎 Issue 提需求 或 贡献 skill 包。
 
@@ -107,23 +128,26 @@ cd .. && rm -rf _tmp
 
 ```
 SKILL/                                    ← 大仓库根目录
-├── README.md                             ← 本文件（分类总览）
+├── README.md / README.en.md              ← 本文件（分类总览，中英双语）
 ├── LICENSE                               ← MIT
+├── .claude-plugin/marketplace.json       ← Claude Code marketplace 入口
 ├── Paper_Writing/                        ← ✅ 已发布
 │   ├── README.md                         ← 分类详情（推荐入口、流程清单、字数门槛）
 │   ├── thesis-helper/                    ← 一站式入口（含 5 种工作流图）
 │   ├── aigc-reduce-skills/               ← AIGC 率降低 v4
 │   └── PaperWriting/                     ← 论文写作 9 skill 集合
+├── weekly_report/                        ← ✅ 已发布（PhD 周报生成器）
+│   ├── commands/weekly-report.md         ← slash command 定义
+│   └── skills/weekly-report-writer/      ← skill 内容
 ├── Coding/                               ← ⏳ 规划中
-├── Research/                             ← ⏳ 规划中
-└── Productivity/                         ← ⏳ 规划中
+└── Research/                             ← ⏳ 规划中
 ```
 
 **新增 skill 的目录归属规则**：
 - 论文/学术写作 → `Paper_Writing/`
 - 编程/代码相关 → `Coding/`
 - 科研工具/实验/数据 → `Research/`
-- 通用效率/生活/办公 → `Productivity/`
+- 体量较大、独立 plugin 的 skill 可置于根目录（如 `weekly_report/`）
 - 不确定 → 开 Issue 讨论分类归属
 
 ---

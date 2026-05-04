@@ -1,4 +1,16 @@
-# 周报生成器（Weekly Report Writer）
+<div align="center">
+
+# 📊 周报生成器 · Weekly Report Writer
+
+**博士生专用 Claude Code skill** · 扫工程 → 对比上周 → 自动写周报
+
+🇨🇳 **简体中文** · 🇺🇸 [English](README.md)
+
+![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Version](https://img.shields.io/badge/version-v1.0-green.svg) ![Tests](https://img.shields.io/badge/tests-132%20passed-brightgreen.svg) ![Output](https://img.shields.io/badge/output-Markdown%20%2B%20PDF-orange.svg)
+
+</div>
+
+---
 
 > 一个 Claude Code skill，专为博士生设计：扫描你的工程目录、对比上周快照、问你简短的 L3 问卷，自动写出可直接交导师的 PhD 风格周报（Markdown + PDF）。
 
