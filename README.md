@@ -12,7 +12,7 @@
 
 ---
 
-> Claude Code skill 大仓库。按使用场景分类组织，所有 skill 均可装入 `~/.claude/skills/` 或通过 marketplace 安装。
+> skill 大仓库。按使用场景分类组织，所有 skill 均可装入 `~/.claude/skills/` 或通过 marketplace 安装，同时设计了多种主流AI的适配性工作，可以在不同AI平台使用。
 
 ---
 
