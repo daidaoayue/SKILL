@@ -68,10 +68,11 @@ defense slides. Use it once per init/baseline run.
 
 ## After receiving LLM output
 
-1. Save to `<project>/.weekly_report/baseline/roadmap_v1.md`
+1. Save alongside the baseline report:
+   `<project>/.weekly_report/<year>/<month>/<date>_roadmap_v1.md`
 2. Insert into baseline report §8 directly
 3. Add to baseline interview as "请审一遍这份路线图，有要改的地方在下方写 Δ"
-4. After user reviews, generate `roadmap_v2.md` with their deltas applied
+4. After user reviews, generate `<date>_roadmap_v2.md` (same dir) with their deltas applied
 
 ## Iterating
 

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>weekly-report-writer · 工作流</title>
+<style>
+  /* === Variant F · Blueprint Engineering（中文版） ===
+     美学方向：暖纸色底 + 工程蓝图。
+     字体：思源宋体（CJK 衬线）+ JetBrains Mono（拉丁等宽 / 技术标签）。
+     四色，无渐变无投影。 */
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:wght@400;600;700&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500&display=swap');
+
+  :root {
+    --paper:   #F5F1E8;
+    --ink:     #1A2332;
+    --pencil:  #6B6F76;
+    --rule:    #1A2332;
+    --ember:   #C4541C;
+    --rust:    #8B3A0E;
+    --jade:    #2F5D3F;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  body {
+    font-family: 'Source Serif 4', 'Noto Serif SC', 'Songti SC', '宋体', Georgia, serif;
+    color: var(--ink);
+    padding: 60px 48px 80px;
+    max-width: 1100px;
+    margin: 0 auto;
+    line-height: 1.55;
+  }
+  .header {
+    border-top: 3px double var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding: 16px 0 14px;
+    margin-bottom: 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--pencil);
+  }
+  .header .seg-en {
+    text-transform: uppercase;
+  }
+  .header .title {
+    font-family: 'Source Serif 4', 'Noto Serif SC', serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+  }
+  h1 {
+    font-family: 'Noto Serif SC', 'Source Serif 4', serif;
+    font-weight: 700;
+    font-size: 56px;
+    line-height: 1.15;
+    letter-spacing: -0.005em;
+    margin: 0 0 8px;
+  }
+  h1 .accent { color: var(--ember); }
+  .subtitle {
+    font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+    font-size: 14px;
+    color: var(--pencil);
+    letter-spacing: 0.04em;
+    margin-bottom: 56px;
+  }
+
+  /* === Pipeline rail === */
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    position: relative;
+    margin-bottom: 64px;
+  }
+  .pipeline::before {
+    content: "";
+    position: absolute;
+    top: 18px;          /* 圆圈竖直中线 (36px / 2)，rail 横穿圆圈不再压下方文字 */
+    left: 8%;
+    right: 8%;
+    height: 1px;
+    background: var(--ink);
+    z-index: 1;
+  }
+  .stage {
+    text-align: center;
+    position: relative;
+    padding: 0 8px;
+  }
+  .stage .num {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    background: var(--paper);
+    line-height: 33px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    position: relative;
+    z-index: 2;
+  }
+  .stage .glyph {
+    font-size: 20px;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .stage h3 {
+    font-family: 'Noto Serif SC', 'Source Serif 4', serif;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 8px 0 4px;
+    letter-spacing: 0;
+  }
+  .stage .desc {
+    font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+    font-size: 11.5px;
+    color: var(--pencil);
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+  .stage .desc-cn {
+    font-family: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+    font-size: 12px;
+    color: var(--pencil);
+    line-height: 1.5;
+    margin-top: 2px;
+  }
+  .stage.deliverable .num {
+    background: var(--ember);
+    color: var(--paper);
+    border-color: var(--ember);
+  }
+  .stage.deliverable h3 { color: var(--ember); }
+
+  /* === Layered architecture === */
+  .layers {
+    margin-bottom: 64px;
+  }
+  .section-label {
+    font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: var(--pencil);
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--ink);
+    padding-bottom: 4px;
+  }
+  .layer {
+    border: 1px solid var(--ink);
+    padding: 18px 24px;
+    margin-bottom: -1px;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+    background: var(--paper);
+  }
+  .layer .layer-name {
+    font-family: 'Noto Serif SC', 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--ink);
+  }
+  .layer .layer-name .tag {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--pencil);
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+  .layer .modules {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+    font-size: 12.5px;
+  }
+  .layer .modules .mod {
+    border: 1px solid var(--pencil);
+    padding: 3px 9px;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .layer.guard {
+    border: 1.5px solid var(--rust);
+    background: rgba(196, 84, 28, 0.04);
+  }
+  .layer.guard .layer-name { color: var(--rust); }
+  .layer.guard .layer-name .tag { color: var(--rust); }
+  .layer.guard .modules .mod {
+    border-color: var(--rust);
+    color: var(--rust);
+  }
+  .layer.output {
+    border-color: var(--jade);
+  }
+  .layer.output .layer-name { color: var(--jade); }
+  .layer.output .modules .mod {
+    border-color: var(--jade);
+    color: var(--jade);
+  }
+
+  /* === Footer ledger === */
+  .ledger {
+    border-top: 3px double var(--ink);
+    padding-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+    font-size: 11px;
+    color: var(--pencil);
+    letter-spacing: 0.04em;
+  }
+  .ledger .item .label {
+    color: var(--ink);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
+    letter-spacing: 0.06em;
+    font-size: 11px;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+  .ledger .item .val {
+    font-size: 16px;
+    color: var(--ink);
+    font-weight: 600;
+    font-family: 'Noto Serif SC', 'Source Serif 4', serif;
+  }
+
+  /* === Print === */
+  @media print {
+    body { padding: 24px; }
+    h1 { font-size: 42px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="seg-en">SHEET 01 · WORKFLOW · REV E</span>
+  <span class="title">weekly-report-writer · v1.0</span>
+  <span class="seg-en">SCALE 1:1 · A4</span>
+</div>
+
+<h1>周报，<br><span class="accent">5 分钟落档。</span></h1>
+<p class="subtitle">Claude Code skill · 扫工程 · 对比上周 · L3 质询 · 输出 PhD 风格周报（Markdown + PDF）</p>
+
+<div class="pipeline">
+  <div class="stage">
+    <div class="num">01</div>
+    <h3>启动</h3>
+    <div class="desc">/weekly-report init<br>&lt;project-path&gt;</div>
+    <div class="desc-cn">首次配置项目</div>
+  </div>
+  <div class="stage">
+    <div class="num">02</div>
+    <h3>扫描</h3>
+    <div class="desc">ThreadPool walker<br>manifest.json</div>
+    <div class="desc-cn">秒级出文件清单</div>
+  </div>
+  <div class="stage">
+    <div class="num">03</div>
+    <h3>对比</h3>
+    <div class="desc">compute_diff<br>diff.json</div>
+    <div class="desc-cn">版本链 · 指标 Δ · 新公式</div>
+  </div>
+  <div class="stage">
+    <div class="num">04</div>
+    <h3>质询</h3>
+    <div class="desc">L3 questionnaire<br>5–9 sections</div>
+    <div class="desc-cn">用户填空 5-10 分钟</div>
+  </div>
+  <div class="stage deliverable">
+    <div class="num">05</div>
+    <h3>周报</h3>
+    <div class="desc">.md + .pdf<br>PhD format</div>
+    <div class="desc-cn">直接交导师</div>
+  </div>
+</div>
+
+<div class="layers">
+  <div class="section-label">架构 · 三层 / Architecture · Three Strata</div>
+  <div class="layer">
+    <div class="layer-name">LLM 编排<span class="tag">SKILL.md · LLM Orchestration</span></div>
+    <div class="modules">
+      <span class="mod">模式路由</span>
+      <span class="mod">叙述合成</span>
+      <span class="mod">驱动质询</span>
+    </div>
+  </div>
+  <div class="layer">
+    <div class="layer-name">确定性 Python<span class="tag">scripts/ · 16 modules</span></div>
+    <div class="modules">
+      <span class="mod">scan_project</span>
+      <span class="mod">parse_filename</span>
+      <span class="mod">bucket_classifier</span>
+      <span class="mod">compute_diff</span>
+      <span class="mod">extract_metrics</span>
+      <span class="mod">theory_extractor</span>
+      <span class="mod">interview_generator</span>
+      <span class="mod">parse_interview</span>
+      <span class="mod">metric_vocab</span>
+      <span class="mod">run_baseline</span>
+      <span class="mod">render_pdf</span>
+      <span class="mod">update_index</span>
+    </div>
+  </div>
+  <div class="layer guard">
+    <div class="layer-name">路径守卫（红线）<span class="tag">path_guard.py · RED LINE</span></div>
+    <div class="modules">
+      <span class="mod">白名单强制</span>
+      <span class="mod">越界抛 PathGuardError</span>
+      <span class="mod">21 个测试用例</span>
+    </div>
+  </div>
+  <div class="layer output">
+    <div class="layer-name">持久化层<span class="tag">仅此可写 · Persistence</span></div>
+    <div class="modules">
+      <span class="mod">&lt;project&gt;/.weekly_report/&lt;year&gt;/&lt;month&gt;/</span>
+      <span class="mod">reports_root/&lt;year&gt;/&lt;month&gt;/</span>
+      <span class="mod">index.md</span>
+    </div>
+  </div>
+</div>
+
+<div class="ledger">
+  <div class="item"><span class="label">首次配置</span><span class="val">~10 分钟</span></div>
+  <div class="item"><span class="label">每周耗时</span><span class="val">~5-10 分钟</span></div>
+  <div class="item"><span class="label">测试覆盖</span><span class="val">132 通过</span></div>
+  <div class="item"><span class="label">许可证</span><span class="val">MIT</span></div>
+</div>
+
+</body>
+</html>

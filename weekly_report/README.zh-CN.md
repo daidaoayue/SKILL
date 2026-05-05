@@ -22,11 +22,20 @@
 
 ## 输出物
 
-- `<工程>/.weekly_report/<年>/<月>/<周>/report.md` —— 周报 Markdown
-- `<工程>/.weekly_report/<年>/<月>/<周>/report.pdf` —— PDF（如装了 pandoc + xelatex）
-- `<工程>/.weekly_report/<年>/<月>/<周>_tex/` —— LaTeX 源 + 中间文件
-- `D:\code\reports\<年>\<月>\<日期范围>_W<周号>_<short>.md` —— 副本汇总
-- `D:\code\reports\index.md` —— 跨工程索引（按年/周倒序）
+布局：**md + pdf** 按月归档；**tex 中间文件**按 年/月/日 三级隔离，避免多次跑后污染。
+
+```
+<工程>/.weekly_report/
+  ├── <年>/<月>/<日期>_baseline_report.{md,pdf}          ← baseline 总报告
+  ├── <年>/<月>/<日期>_W<周号>_report.{md,pdf}            ← 增量周报
+  └── tex/<年>/<月>/<日>/<日期>_*_report.{tex,aux,log,out}
+
+<reports_root>/                                          ← 默认 D:\code\reports\
+  ├── <年>/<月>/<日期>_baseline_<short>.{md,pdf}
+  ├── <年>/<月>/<日期>_W<周号>_<short>.{md,pdf}
+  ├── tex/<年>/<月>/<日>/<日期>_*_<short>.tex
+  └── index.md                                           ← 跨工程索引
+```
 
 报告版式贴合 PhD 风格：问候语 → 开场段 → 主要工作分节（实验背景 / 方法 / 实验结果 mean ± std + 95% CI / 关键发现 / 理论公式块 / 配图）→ 本周总结 → 下周计划 → 给老师的 ask → 结束祝福 → 学生签名 → 日期。
 

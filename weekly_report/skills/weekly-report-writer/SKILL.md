@@ -103,13 +103,21 @@ description: PhD 学生周报全自动生成 skill。扫描工程目录、对比
 
 ### 9. 落档
 
-- 周报 markdown：`<project>/.weekly_report/<year>/<month>/<week>/report.md`
-- 周报 PDF（如 pandoc + xelatex 在 PATH）：`<project>/.weekly_report/<year>/<month>/<week>/report.pdf`
-- LaTeX 源 + aux：`<project>/.weekly_report/<year>/<month>/<week>_tex/`（与 PDF 平级，但单独目录隔离 .aux/.log/.toc 噪声）
-- Manifest/diff/interview/interview_parsed.json/images/ 同 markdown 目录
-- 副本：`D:\code\reports\<year>\<month>\<date_range>_W<n>_<short_name>.md`（report.md 副本）
-- 调用 `scripts/update_index.py` 更新 `D:\code\reports\index.md`
-- 写 `<project>/.weekly_report/latest.txt` 指针
+落档结构：**md + pdf 按月归档；tex 中间文件按 年/月/日 三级隔离**（避免多周累积污染）。
+
+项目内：
+
+- markdown：`<project>/.weekly_report/<year>/<month>/<date>_baseline_report.md`（baseline）/ `<date>_W<n>_report.md`（weekly）
+- PDF（pandoc + xelatex 可用时）：同目录，仅扩展名换 `.pdf`
+- LaTeX 源 + aux/log/out：`<project>/.weekly_report/tex/<year>/<month>/<day>/<date>_*_report.{tex,aux,log,out}`
+- Manifest / diff / interview_parsed.json / images/ 仍随 markdown 同目录或 `.weekly_report/` 顶层
+
+聚合（`<reports_root>/`，默认 `D:\code\reports\`）：
+
+- 副本：`<reports_root>/<year>/<month>/<date>_baseline_<short>.{md,pdf}` / `<date>_W<n>_<short>.{md,pdf}`
+- LaTeX 源副本：`<reports_root>/tex/<year>/<month>/<day>/<date>_*_<short>.tex`
+- 调用 `scripts/update_index.py` 更新 `<reports_root>/index.md`
+- 写 `<project>/.weekly_report/latest.txt` 指针（指向最新 markdown 相对路径）
 
 ### 9.1 PDF 渲染（baseline 模式同样适用）
 

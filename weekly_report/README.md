@@ -26,9 +26,20 @@ Then it writes a structured advisor-ready weekly report.
 
 ## What it produces
 
-- `<project>/.weekly_report/<year>/<month>/<week>/report.md` — the report
-- `D:\code\reports\<year>\<month>\<date_range>_W<n>_<short>.md` — aggregate copy
-- `D:\code\reports\index.md` — cross-project index, all weeks listed
+Layout: **md + pdf** archived by month; **tex intermediates** isolated by year/month/day to prevent cross-week contamination.
+
+```
+<project>/.weekly_report/
+  ├── <year>/<month>/<date>_baseline_report.{md,pdf}      ← baseline
+  ├── <year>/<month>/<date>_W<n>_report.{md,pdf}          ← weekly increments
+  └── tex/<year>/<month>/<day>/<date>_*_report.{tex,aux,log,out}
+
+<reports_root>/
+  ├── <year>/<month>/<date>_baseline_<short>.{md,pdf}
+  ├── <year>/<month>/<date>_W<n>_<short>.{md,pdf}
+  ├── tex/<year>/<month>/<day>/<date>_*_<short>.tex
+  └── index.md   (cross-project index, all reports listed)
+```
 
 The report follows a PhD format: greeting, opening paragraph, major-work
 sections with experiment results tables (mean ± std + 95% CI), theory blocks

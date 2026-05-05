@@ -1,10 +1,20 @@
 """Generate the baseline (first-week) total report for a project.
 
-Inputs: <project>/.weekly_report/{project.toml, metric_vocab.json, baseline/manifest.json}
-Outputs:
-  <project>/.weekly_report/baseline/baseline_report.md
-  <reports_root>/<year>/<month>/<date>_baseline_<short>.md
-  <reports_root>/index.md updated
+Inputs:
+  <project>/.weekly_report/{project.toml, metric_vocab.json, baseline/manifest.json}
+
+Outputs (md + pdf 按月归档；tex 中间文件按年/月/日三级隔离，避免多周累积时混在一起):
+
+  <project>/.weekly_report/
+    ├── <year>/<month>/<date>_baseline_report.md
+    ├── <year>/<month>/<date>_baseline_report.pdf
+    └── tex/<year>/<month>/<day>/<date>_baseline_report.{tex,aux,log,out}
+
+  <reports_root>/
+    ├── <year>/<month>/<date>_baseline_<short>.md
+    ├── <year>/<month>/<date>_baseline_<short>.pdf
+    ├── tex/<year>/<month>/<day>/<date>_baseline_<short>.tex
+    └── index.md (updated)
 
 This is the deterministic backbone. The §8 roadmap section is left as a
 draft for the user to refine — see references/baseline-roadmap-prompt.md.
@@ -13,6 +23,7 @@ from __future__ import annotations
 import datetime as _dt
 import json
 import re
+import shutil
 import statistics
 from collections import defaultdict
 from pathlib import Path
@@ -734,7 +745,28 @@ def render_baseline(
 
 
 def run_baseline(project_root: Path, reports_root: Path) -> dict:
-    """Top-level: read everything, render, save, copy, update index."""
+    """Top-level: read everything, render, save, mirror to aggregate, update index.
+
+    Output structure:
+      - md + pdf 按月归档
+      - tex 中间文件单独走 tex/<年>/<月>/<日>/ 三级目录，避免多次跑后中间文件混乱
+
+        <project>/.weekly_report/
+          ├── 2026/05/
+          │   ├── 2026-05-05_baseline_report.md
+          │   └── 2026-05-05_baseline_report.pdf
+          ├── tex/2026/05/05/
+          │   └── 2026-05-05_baseline_report.{tex,aux,log,out}
+          └── baseline/manifest.json   (kept for back-compat with scan stage)
+
+        <reports_root>/
+          ├── 2026/05/
+          │   ├── 2026-05-05_baseline_<short>.md
+          │   └── 2026-05-05_baseline_<short>.pdf
+          ├── tex/2026/05/05/
+          │   └── 2026-05-05_baseline_<short>.tex
+          └── index.md
+    """
     wr = project_root / ".weekly_report"
     proj_meta_full = _read_toml_minimal(wr / "project.toml")
     proj_meta = proj_meta_full.get("project", {}) if isinstance(proj_meta_full, dict) else {}
@@ -744,48 +776,71 @@ def run_baseline(project_root: Path, reports_root: Path) -> dict:
 
     md = render_baseline(project_root, manifest, vocab, proj_meta)
 
-    # Save inside project
-    in_proj_path = wr / "baseline" / "baseline_report.md"
-    assert_write_allowed(in_proj_path, project_root=project_root)
-    in_proj_path.parent.mkdir(parents=True, exist_ok=True)
-    in_proj_path.write_text(md, encoding="utf-8")
-
-    # Mirror to reports aggregate
     today = _dt.date.today()
+    date_str = f"{today.year}-{today.month:02d}-{today.day:02d}"
+    yr, mo, day = f"{today.year}", f"{today.month:02d}", f"{today.day:02d}"
     short = proj_meta.get("short_name") or proj_meta.get("name") or project_root.name
-    aggregate_path = (reports_root / f"{today.year}" / f"{today.month:02d}"
-                      / f"{today.year}-{today.month:02d}-{today.day:02d}_baseline_{short}.md")
-    assert_write_allowed(aggregate_path, reports_root=reports_root)
-    aggregate_path.parent.mkdir(parents=True, exist_ok=True)
-    aggregate_path.write_text(md, encoding="utf-8")
 
-    # Update index
+    # ---- In-project archive ----
+    in_proj_ym = wr / yr / mo                              # md + pdf 按月
+    in_proj_tex_dir = wr / "tex" / yr / mo / day           # tex 按日（避免多次 run 互污染）
+    in_proj_md = in_proj_ym / f"{date_str}_baseline_report.md"
+
+    assert_write_allowed(in_proj_md, project_root=project_root)
+    assert_write_allowed(in_proj_tex_dir / "_probe", project_root=project_root)
+    in_proj_md.parent.mkdir(parents=True, exist_ok=True)
+    in_proj_tex_dir.mkdir(parents=True, exist_ok=True)
+    in_proj_md.write_text(md, encoding="utf-8")
+
+    # ---- Aggregate archive ----
+    aggregate_ym = reports_root / yr / mo                  # md + pdf 按月
+    aggregate_tex_dir = reports_root / "tex" / yr / mo / day  # tex 按日
+    aggregate_md = aggregate_ym / f"{date_str}_baseline_{short}.md"
+    aggregate_pdf = aggregate_ym / f"{date_str}_baseline_{short}.pdf"
+    aggregate_tex = aggregate_tex_dir / f"{date_str}_baseline_{short}.tex"
+
+    for p in (aggregate_md, aggregate_pdf, aggregate_tex):
+        assert_write_allowed(p, reports_root=reports_root)
+    aggregate_ym.mkdir(parents=True, exist_ok=True)
+    aggregate_tex_dir.mkdir(parents=True, exist_ok=True)
+    aggregate_md.write_text(md, encoding="utf-8")
+
+    # ---- Update cross-project index ----
     index_path = reports_root / "index.md"
     assert_write_allowed(index_path, reports_root=reports_root)
     upsert_index_row(
         index_path,
         year=str(today.year),
         week="baseline",
-        date_range=f"{today.year}-{today.month:02d}-{today.day:02d}",
+        date_range=date_str,
         project_short=short,
         highlight=f"{len(manifest['buckets']['code'].get('version_chains', {}))} 实验链 baseline",
-        link=f"{today.year}/{today.month:02d}/"
-             f"{today.year}-{today.month:02d}-{today.day:02d}_baseline_{short}.md",
+        link=f"{today.year}/{today.month:02d}/{date_str}_baseline_{short}.md",
     )
 
-    # PDF render via pandoc + xelatex
+    # ---- PDF render (in-project, then mirror to aggregate) ----
+    pdf_basename = f"{date_str}_baseline_report"
     pdf_result = render_pdf(
-        md_path=in_proj_path,
+        md_path=in_proj_md,
         template_path=_TEMPLATE_TEX,
         project_root=project_root,
-        out_pdf_dir=in_proj_path.parent,                   # baseline/
-        aux_dir=project_root / ".weekly_report" / "baseline_tex",
-        output_basename="baseline_report",
+        out_pdf_dir=in_proj_ym,            # <year>/<month>/<date>_baseline_report.pdf
+        aux_dir=in_proj_tex_dir,           # <year>/<month>/tex/<date>_baseline_report.{tex,aux,log,out}
+        output_basename=pdf_basename,
     )
 
+    # Copy PDF + .tex to aggregate (only if render succeeded)
+    if pdf_result.get("status") == "ok":
+        shutil.copy2(pdf_result["pdf_path"], aggregate_pdf)
+        shutil.copy2(pdf_result["tex_path"], aggregate_tex)
+
     return {
-        "in_project_md": str(in_proj_path),
-        "aggregate_md": str(aggregate_path),
+        "in_project_md": str(in_proj_md),
+        "in_project_pdf": pdf_result.get("pdf_path"),
+        "in_project_tex": pdf_result.get("tex_path"),
+        "aggregate_md": str(aggregate_md),
+        "aggregate_pdf": str(aggregate_pdf) if pdf_result.get("status") == "ok" else None,
+        "aggregate_tex": str(aggregate_tex) if pdf_result.get("status") == "ok" else None,
         "index": str(index_path),
         "size_kb": len(md) // 1024,
         "pdf": pdf_result,
