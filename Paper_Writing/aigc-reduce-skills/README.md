@@ -31,6 +31,7 @@
 # macOS / Linux / Windows (Git Bash) 通用
 git clone https://github.com/daidaoayue/SKILL.git ~/SKILL
 cp -r ~/SKILL/Paper_Writing/aigc-reduce-skills/aigc-reduce* ~/.claude/skills/
+cp ~/SKILL/Paper_Writing/aigc-reduce-skills/_REGISTER-SPEC.md ~/.claude/skills/
 ```
 
 ### 方式二：Sparse checkout（只下载本 skill 包，省流量）
@@ -40,6 +41,7 @@ mkdir -p ~/.claude/skills && cd ~/.claude/skills
 git clone --depth 1 --filter=blob:none --sparse https://github.com/daidaoayue/SKILL.git _tmp
 cd _tmp && git sparse-checkout set Paper_Writing/aigc-reduce-skills
 mv Paper_Writing/aigc-reduce-skills/aigc-reduce* ../
+mv Paper_Writing/aigc-reduce-skills/_REGISTER-SPEC.md ../
 cd .. && rm -rf _tmp
 ```
 
@@ -47,7 +49,7 @@ cd .. && rm -rf _tmp
 
 1. 打开 [https://github.com/daidaoayue/SKILL](https://github.com/daidaoayue/SKILL) → `Code` → `Download ZIP`
 2. 解压后进入 `SKILL-main/Paper_Writing/aigc-reduce-skills/`
-3. 把 8 个 `aigc-reduce*` 文件夹**整体放进**：
+3. 把 8 个 `aigc-reduce*` 文件夹**和 `_REGISTER-SPEC.md`** 整体放进：
    - macOS / Linux：`~/.claude/skills/`
    - Windows：`C:\Users\<你的用户名>\.claude\skills\`
 4. 重启 Claude Code
@@ -131,6 +133,18 @@ Claude 会自动（全程无需用户再操作）：
 - ❌ 绝对不一次性整篇丢给 LLM——必须按章节/段落颗粒度切分
 - ❌ 绝对不许处理两三段就停下——必须把所有 chunk 全部跑完 7 步流水线
 
+## 📐 学术语体规范（_REGISTER-SPEC.md）
+
+`aigc-reduce-skills/_REGISTER-SPEC.md`（与 8 个 skill 文件夹同级）是全流水线的**单一语体真相源**。所有产出正文的 skill 一律遵循：
+
+- **正文锁 L1 严格书面体**：禁反问句（`为什么有效？`）、禁口号碎句（`数字说明了问题。`）、禁口语词（`绕不过的坑`、`实际跑下来`）、禁中文第一人称（`我们/课题组`）。
+- **保留 L2 认知内容**：反直觉结果、机制疑问、方法取舍等研究过程事实保留，但用客观陈述句承载。
+- **英文 `we` 保留**（学术惯例）。
+- **致谢节豁免但有约束**：致谢保留个人化语气，但须逐句做负面歧义复核（贬义双关 / 冷漠暗示 / 反讽读法），并打散机械平行感谢句。
+- **全文收尾**：Phase Final 追加一条全文负面歧义轻扫。
+
+需要调整语体级别时，只改 `_REGISTER-SPEC.md` 一处即可，无需逐个 skill 修改。
+
 ## 📋 各 Stage 处理什么
 
 | Stage | 处理目标 | 量化指标 |
@@ -140,7 +154,7 @@ Claude 会自动（全程无需用户再操作）：
 | 2. 节奏变频 | 句长方差 < 30 → > 80，段长不齐，主动语态 > 65% | σ² 提升 3 倍+ |
 | 3. 逻辑衔接 | 删除 Furthermore / 此外 / 因此，用语义链 | 段首禁用词清零 |
 | 4. 语义精细化 | 仅 L4 因果断言处加 caveat（降级使用） | 绝对化语气校准 |
-| 5. 困惑度+思维痕迹 ⭐ | 破坏 N-gram + 注入"为什么有效？/这个结果有点反直觉" | 每章 ≥ 2 处痕迹 |
+| 5. 困惑度+思维痕迹 ⭐ | 破坏 N-gram + 注入 L1 书面体研究痕迹（"该结果与预期不符"等） | 每章 ≥ 2 处痕迹 |
 | 6. 引用注入 ⭐ | 综述段每 200 字挂 1 个 \cite，不加借鉴句 | cite 密度正常化 |
 
 ## 🔬 本地 AIGC 检测工具
